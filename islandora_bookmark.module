@@ -1,0 +1,1099 @@
+<?php
+
+/**
+ * @file
+ * Module used to track and manage user defined lists of pids.
+ * 
+ */
+
+/*
+ * Implementation of hook_permission().
+ */
+function islandora_bookmark_permission() {
+  return array(
+    "manage other users' pidlists" => array(
+      'title' => t("Manage other users' bookmarks"),
+    ),
+    'administer islandora_bookmark' => array(
+      'title' => t('Administer the islandora_bookmark module'),
+    )
+  );
+  
+}
+
+/*
+ * Implementation of hook_user_login().
+ * 
+ * Checks to see if the user was anonymous and created Bookmark objects before
+ * they logged in. Iterates through the session and adds these records to the
+ * database.
+ */
+function islandora_bookmark_user_login(&$edit, &$account) {
+  global $user;
+   
+  if (!empty($_SESSION['islandora_bookmark'])) {
+     foreach ($_SESSION['islandora_bookmark'] as $key => $value) {
+      $bookmark_session = unserialize($value);
+      $anon_index = array_search(0, $bookmark_session->user_list, TRUE);
+      // Replace the anon who's logged in with their associated user uid
+      $bookmark_session->user_id = $user->uid;
+      $bookmark_session->user_list[$anon_index] = $user->uid;
+      $bookmark_session->bookmark_session = FALSE;
+      $bookmark_session->create_list();
+      unset($_SESSION['islandora_bookmark'][$key]);
+     }
+  }
+}
+
+/*
+ * Implementation of hook_menu().
+ */
+function islandora_bookmark_menu() {
+   module_load_include('inc', 'islandora_bookmark', 'Bookmark');
+  $items['islandora_bookmark'] = array(
+  'title' => 'My Bookmarks',
+  'description' => "Track and manage list of pids",
+  'type' => MENU_NORMAL_ITEM,
+  'page callback' => 'drupal_get_form',
+  'page arguments' => array('islandora_bookmark_list_form'),
+  'access arguments' => array('access content'),   
+ );
+
+
+$items['islandora_bookmark/lists'] = array(
+  'title' => 'Lists',
+  'type' => MENU_DEFAULT_LOCAL_TASK,
+  'page callback' => 'drupal_get_form',
+  'page arguments' => array('islandora_bookmark_list_form'),
+  'access arguments' => array('access content'),
+);
+
+$items['islandora_bookmark/add'] = array(
+  'title' => 'Add',
+  'type' => MENU_LOCAL_TASK,
+  'page callback' => 'drupal_get_form',
+  'page arguments' => array('islandora_bookmark_add_form'),
+  'access arguments' => array('access content'),
+);
+
+  $items['admin/config/islandora_bookmark'] = array(
+      'title' => 'Islandora Pid List',
+      'description' => 'Settings for the Islandora Pid List module.',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('islandora_pid_list_settings'),
+      'access arguments' => array(t('Adminisiter islandora_pid_list module')),
+  );
+
+  return $items;
+}
+
+/**
+ * Form constructor for the Bookmark list form.
+ * 
+ * @global type $user
+ * 
+ * @param array $form_state
+ *   The Drupal form state.
+ * 
+ */
+function islandora_bookmark_list_form($form_state) {
+  drupal_add_css(drupal_get_path('module', 'islandora_pid_list') . '/css/islandora_pid_list.css');
+  module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
+  module_load_include('inc', 'islandora_bookmark', 'Bookmark');
+  module_load_include('inc', 'fedora_repository', 'api/tuque');
+  global $user;
+   
+  // Get all users for use in select for forms
+  $result = db_query("SELECT uid, name FROM {users} ORDER BY uid");
+  
+  foreach ($result as $record) {
+    $resultname = $record->name;
+      if ($record->uid == 0) {
+        $resultname = 'Anonymous';
+      }
+    $options[$record->uid] = array(
+      'uid' => $record->uid,
+      'name' => $resultname
+    );
+  }
+  
+  $pidlist = get_user_owned_bookmarks();
+  
+  $form = array(
+    '#tree' => TRUE,
+    '#prefix' => '<div id="allpidlists">',
+    '#suffix' => '</div>',
+  );
+  $form['test'] = array(
+    'fieldset' => array(
+        '#type' => 'fieldset',
+        '#title' => t('Test view table'),
+        'table' => islandora_bookmark_form_table($pidlist),
+    )
+  );
+  $form['userlists'] = array(
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+    '#title' => t('My Bookmarks'),
+  );
+  
+  if (!empty($pidlist)) {
+    foreach ($pidlist as $key => $value) {
+      $idoutput = str_replace('session_', '', $value->bookmark_id);
+      $form['userlists'][$key] = array( 
+        '#type' => 'fieldset',
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+        '#title' => check_plain($value->bookmark_name . ' [ID:' . $idoutput . ']'),
+      );
+      
+      if (isset($form_state['storage']['listid']) && $value->bookmark_id == $form_state['storage']['listid']) {
+        $form['userlists'][$key]['#collapsed'] = FALSE;
+        unset($form_state['storage']['listid']);
+      }
+      
+      if (isset($_GET['collapsed']) && $_GET['collapsed'] == $value->bookmark_id) {
+        $form['userlists'][$key]['#collapsed'] = FALSE;
+        unset($_GET['collapsed']);
+      }
+            
+      $form['userlists'][$key]['listname'] = array(
+        '#type' => 'textfield',
+        '#title' => t('List Name'),
+        '#size' => 20,
+        '#value' => $value->bookmark_name,
+        '#prefix' => '<div class="listdetails">',
+        '#ajax' => array(
+          'event' => '',
+          'keypress' => TRUE,
+          'callback' => 'islandora_pid_list_update_name_js',
+          'wrapper' => 'allpidlists',
+          'method' => 'replace',          
+        ),
+      );
+
+      $form['userlists'][$key]['changename'] = array(
+        '#type' => 'image_button',
+        '#src' => drupal_get_path('module', 'islandora_pid_list') . '/images/add.png', 
+        '#suffix' => '</div>',
+        '#ajax' => array(
+            'event' => 'click',
+            'callback' => 'islandora_pid_list_update_name_js',
+            'wrapper' => 'allpidlists',
+            'method' => 'replace',
+            ),
+      );  
+
+      $form['userlists'][$key]['labelremove'] = array(
+        '#type' => 'item',
+        '#title' => t('Delete this list'),
+        '#weight' => 20000,
+        '#prefix' => '<div class="removelist">',
+      );
+
+      $form['userlists'][$key]['remove'] = array(
+        '#type' => 'image_button',
+        '#weight' => 20001,
+        '#src' => drupal_get_path('module', 'islandora_pid_list') . '/images/purge.gif', 
+        '#suffix' => '</div>',
+        '#ajax' => array(
+            'event' => 'click',
+            'callback' => 'islandora_pid_list_remove_list_js',
+            'wrapper' => 'allpidlists',
+            'method' => 'replace',
+        ),
+      );
+
+
+    $form['userlists'][$key]['list-id'] = array(
+        '#type' => 'value',
+        '#value' => $key,
+    );  
+    $form['userlists'][$key]['plo'] = array(
+      '#type' => 'value',
+      '#value' => $value,
+    );
+  
+    $fku =& $form['userlists'][$key]['users'];
+
+    $fku = array( 
+      '#type' => 'fieldset',
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+      '#title' => t('Users'),
+    );
+
+    if (count($value->user_list) == 0) {
+        $fku[$itr]['empty'] = array(
+          '#type' => 'item',
+          '#markup' => t('There are no users associated with this list'),
+        );
+    }
+    else {
+      foreach ($value->user_list as $itr => $piduser) {
+        $tempuser = user_load($piduser);
+          if ($tempuser->uid == 0) {
+            $tempuser = t('Anonymous');
+          }
+          elseif ($tempuser->uid == $user->uid) {
+            $tempuser = t('Yourself');
+          }
+          else {
+            $tempuser = $tempuser->name;
+          }
+
+          $fku[$itr] = array(
+            '#prefix' => '<div class="users">',
+            '#suffix' => '</div>',
+            'label' => array(
+              '#type' => 'item',
+              '#markup' => $tempuser,
+            ),
+            'user' => array(
+              '#type' => 'value',
+              '#value' => $piduser,
+            ),
+            'list-id' => array(
+              '#type' => 'value',
+              '#value' => $key,
+            ),
+            'remove' => array(
+              '#type' => 'image_button',
+              '#src' => drupal_get_path('module', 'islandora_pid_list') . '/images/minus_small.png',
+              '#ajax' => array(
+                'event' => 'click',
+                'callback' => 'islandora_pid_list_remove_user_js',
+                'wrapper' => 'allpidlists',
+                'method' => 'replace',
+              ),
+            ),
+            'plo' => array(
+              '#type' => 'value',
+              '#value' => $value,
+            )
+          ); 
+        }   
+      }
+      
+      $selectoptions = array("" => "- Select A User To Add - ");
+      
+      foreach ($options as $index => $item) {
+        if (!in_array($index, $value->user_list)) {
+          $selectoptions[$index] = $item['uid'] . ': ' . $item['name'];
+        }  
+      }
+      $fku['listusers'] = array(
+        '#type' => 'select',
+        '#default value' => t('Select a user to add'),
+        '#title' => t('Add a user to the list'),
+        '#options' => $selectoptions,
+        '#width' => 20,
+        '#weight' => 10000,
+        '#prefix' => '<div class="addusertolist">',
+      );
+       $fku['listadd'] = array(
+        '#type' => 'image_button',
+        '#src' => drupal_get_path('module', 'islandora_pid_list') . '/images/add.png', 
+        '#suffix' => '</div>',
+        '#weight' => 10001, 
+        '#ajax' => array(
+          'event' => 'click',
+          'callback' => 'islandora_pid_list_add_user_js',
+          'wrapper' => 'allpidlists',
+          'method' => 'replace',
+        ),
+      ); 
+        
+    $form['userlists'][$key]['pids'] = array( 
+      '#type' => 'fieldset',
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+      '#title' => t('Pids'),
+    );
+    $fkp =& $form['userlists'][$key]['pids']; 
+    
+    if (!empty($value->pid_list)) {
+      foreach ($value->pid_list as $itr => $pid) {
+        $fedoraobject = islandora_object_load($pid);
+        $pidvalue = $pid;
+        
+        if ($fedoraobject) {
+          $pidvalue = l($fedoraobject->label, 'islandora/object/' . $pid, array(
+            'attributes' => array(
+              'target' => '_blank'
+              )));
+        }
+
+        $fkp[$itr] = array(
+          '#prefix' => '<div class="pids">',
+          '#suffix' => '</div>',
+          'label' => array(
+            '#type' => 'item',
+            '#markup' => $pidvalue,
+          ),
+          'pid' => array(
+            '#type' => 'value',
+            '#value' => $pid,
+          ),
+          'plo' => array(
+              '#type' => 'value',
+              '#value' => $value,
+          ),
+          'list-id' => array(
+              '#type' => 'value',
+              '#value' => $key,
+          ),
+        );
+        $fkp[$itr]['remove'] = array(
+          '#type' => 'image_button',
+          '#src' => drupal_get_path('module', 'islandora_pid_list') . '/images/minus_small.png',
+          '#ajax' => array(
+              'event' => 'click',
+              'callback' => 'islandora_pid_list_remove_pid_js',
+              'wrapper' => "allpidlists",
+              'method' => 'replace',
+              ),
+        );
+      }
+    }
+    else {
+      $fkp['empty'] = array(
+        '#type' => 'item',
+        '#prefix' => '<div class="pids">',
+        '#suffix' => '</div>',
+        '#markup' => t('No pids currently associated'),
+      );
+    }
+     
+    $fkp['pidtext'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Add a PID'),
+      '#size' => 20,
+      '#prefix' => '<div class="addpid">',
+      '#suffix' => '</div>',
+      '#weight' => 10000,
+      '#ajax' => array(
+        'event' => '',
+        'keypress' => TRUE,
+        'callback' => 'islandora_pid_list_add_pid_js',
+        'wrapper' => "allpidlists",
+        'method' => 'replace',          
+      ),
+    );
+
+    $fkp['add_button'] = array(
+      '#type' => 'image_button',
+      '#src' => drupal_get_path('module', 'islandora_pid_list') . '/images/add.png', 
+      '#weight' => 10001,  
+      '#ajax' => array(
+        'event' => 'click',
+        'callback' => 'islandora_pid_list_add_pid_js',
+        'wrapper' => "allpidlists",
+        'method' => 'replace',
+      ),
+    );
+   }
+ }
+ else {
+   $form['userlists']['empty'] = array(
+     '#type' => 'item',
+     '#markup' => t('No lists currently associated'),
+     '#prefix' => '<div class="emptylist">',
+     '#suffix' => '</div>',
+   );
+ }
+ 
+ 
+ // 'Shared' lists
+ $pidlist = get_user_shared_bookmarks();
+
+  $form['sharedlists'] = array(
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+    '#title' => t('Bookmarks Shared With Me'),
+  );
+  
+  if (!empty($pidlist)) {
+    foreach ($pidlist as $key => $value) {
+      $idoutput = str_replace('session_', '', $value->bookmark_id);
+      $form['sharedlists'][$key] = array( 
+        '#type' => 'fieldset',
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+        '#title' => check_plain($value->bookmark_name . ' [ID:' . $idoutput . ']'),
+      );
+      
+      if (isset($form_state['storage']['listid']) && $value->bookmark_id == $form_state['storage']['listid']) {
+        $form['sharedlists'][$key]['#collapsed'] = FALSE;
+        unset($form_state['storage']['listid']);
+      }
+      
+      if (isset($_GET['collapsed']) && $_GET['collapsed'] == $value->bookmark_id) {
+        $form['sharedlists'][$key]['#collapsed'] = FALSE;
+        unset($_GET['collapsed']);
+      }
+      
+
+    $form['sharedlists'][$key]['list-id'] = array(
+        '#type' => 'value',
+        '#value' => $key,
+    );  
+    $form['sharedlists'][$key]['plo'] = array(
+      '#type' => 'value',
+      '#value' => $value,
+    );
+  
+    $fku =& $form['sharedlists'][$key]['users'];
+
+    $fku = array( 
+      '#type' => 'fieldset',
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+      '#title' => t('Users'),
+    );
+
+    if (count($value->user_list) == 0) {
+        $fku[$itr]['empty'] = array(
+          '#type' => 'item',
+          '#markup' => t('There are no users associated with this list'),
+        );
+    }
+    else {
+      foreach ($value->user_list as $itr => $piduser) {
+        $tempuser = user_load($piduser);
+          if ($tempuser->uid == 0) {
+            $user_output = t('Anonymous');
+          }
+          elseif ($tempuser->uid == $user->uid) {
+            $user_output = t('Yourself');
+          }
+          else {
+            $user_output = $tempuser->name;
+          }
+
+          $fku[$itr] = array(
+            '#prefix' => '<div class="users">',
+            '#suffix' => '</div>',
+            'label' => array(
+              '#type' => 'item',
+              '#markup' => $user_output,
+            ),
+            'user' => array(
+              '#type' => 'value',
+              '#value' => $piduser,
+            ),
+            'list-id' => array(
+              '#type' => 'value',
+              '#value' => $key,
+            ),
+            'plo' => array(
+              '#type' => 'value',
+              '#value' => $value,
+            ), 
+         );
+         if ($tempuser->uid == $user->uid) {
+          $fku[$itr]['remove'] = array(
+             '#type' => 'image_button',
+             '#src' => drupal_get_path('module', 'islandora_pid_list') . '/images/minus_small.png',
+             '#ajax' => array(
+               'event' => 'click',
+               'callback' => 'islandora_pid_list_remove_user_js',
+               'wrapper' => 'allpidlists',
+               'method' => 'replace',
+             ),
+          );
+         }
+      }   
+    }
+          
+    $form['sharedlists'][$key]['pids'] = array( 
+      '#type' => 'fieldset',
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
+      '#title' => t('Pids'),
+    );
+    $fkp =& $form['sharedlists'][$key]['pids']; 
+    
+    if (!empty($value->pid_list)) {
+      foreach ($value->pid_list as $itr => $pid) {
+        $fedoraobject = islandora_object_load($pid);
+        $pidvalue = $pid;
+        
+        if ($fedoraobject) {
+          $pidvalue = l($fedoraobject->label, 'islandora/object/' . $pid, array(
+            'attributes' => array(
+              'target' => '_blank'
+              )));
+        }
+
+        $fkp[$itr] = array(
+          '#prefix' => '<div class="pids">',
+          '#suffix' => '</div>',
+          'label' => array(
+            '#type' => 'item',
+            '#markup' => $pidvalue,
+          ),
+          'pid' => array(
+            '#type' => 'value',
+            '#value' => $pid,
+          ),
+          'plo' => array(
+              '#type' => 'value',
+              '#value' => $value,
+          ),
+          'list-id' => array(
+              '#type' => 'value',
+              '#value' => $key,
+          ),
+        );
+        
+      }
+    }
+    else {
+      $fkp['empty'] = array(
+        '#type' => 'item',
+        '#prefix' => '<div class="pids">',
+        '#suffix' => '</div>',
+        '#markup' => t('No pids currently associated'),
+      );
+    }
+   
+   }
+ }
+ else {
+   $form['sharedlists']['empty'] = array(
+     '#type' => 'item',
+     '#markup' => t('No lists currently associated'),
+     '#prefix' => '<div class="emptylist">',
+     '#suffix' => '</div>',
+   );
+ }
+ 
+ return $form;
+}
+
+/**
+ * Form constructor for the add Bookmark form.
+ * 
+ * @global type $user
+ * @param type $form_state
+ * @see islandora_pid_list_add_form_submit
+ */
+function islandora_bookmark_add_form($form_state) {
+  global $user;
+      
+  $form = array(
+    '#title' => t('Add'),
+    '#tree' => TRUE,
+    'listname' => array(
+      '#type' => 'textfield',
+      '#title' => t('List Name'),
+      '#size' => 20, 
+    ),
+  );
+  
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#name' => 'islandora_bookmark_add_form_submit',
+    '#value' => t('Submit'),
+  );
+  $form['clear'] = array(
+    '#type' => 'submit',
+    '#name' => 'islandora_bookmark_add_form_clear_button',
+    '#value' => t('Clear'),
+  );
+  
+  return $form; 
+}
+
+/**
+ * Form submission handler for the islandora_pid_list_add_form().
+ * 
+ * @global type $user
+ * @param array $form
+ * @param array $form_state 
+ * @see islandora_pid_list_add_form()
+ */
+function islandora_bookmark_add_form_submit(array $form, array &$form_state) {
+  module_load_include('inc', 'islandora_bookmark', 'Bookmark');
+    
+  global $user;
+  
+  $createname = $form_state['values']['listname'];
+ 
+  // Create a new list
+  if (!ctype_space($createname) && $createname != '') {
+    $paramusers = array();
+    $parampids = array();
+
+    $params = array(
+      'retrieve' => FALSE,
+      'user_id' => $user->uid,
+      'bookmark_owner' => $user->uid,
+      'bookmark_name' => $createname,
+      'bookmark_users' => array($user->uid),
+    );
+
+    if ($user->uid == 0) {
+      $params['bookmark_session'] = TRUE;
+    }
+
+    $templist = new Bookmark($params);
+   
+    if ($user->uid == 0) {
+      $savedlist = 'Note that lists created when not logged will not be saved.';
+    }
+    drupal_set_message(t('The new list %listname was created. %saved',  
+        array(
+          '%listname' => $createname,
+          '%saved' => $savedlist,
+          )
+        ));
+    drupal_goto('islandora_bookmark');
+  }
+  else {
+    drupal_set_message(t('A new list must at least have a name!'), 'error');
+  }
+}
+
+/**
+ * AHAH callback for adding a pid to a list.
+ * 
+ * @see islandora_pid_list_menu() 
+ */
+function islandora_pid_list_add_pid_js($form, $form_state) {
+  
+  module_load_include('inc', 'islandora_bookmark', 'Bookmark');
+  module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
+
+  $param = $form_state['clicked_button']['#parents'][0];
+  $listindex = $form_state['clicked_button']['#parents'][1];
+  $useroffset = $form_state['clicked_button']['#parents'][3];
+    
+  $obj = $form[$param][$listindex]['plo']['#value'];
+  $listname = $obj->bookmark_name;
+  
+  // Needed to account for concurrent users making changes on lists.
+  $obj = get_pid_list_by_number($obj->bookmark_id);
+   
+  if (islandora_bookmark_object_access($obj, $listname)) {
+    $pidindex = 0;
+    if (strlen($_POST[$param][$listindex]['pids']['pidtext']) != 0) {
+      foreach ($form[$param][$listindex]['pids'] as $item => $assoc) {
+        if (is_numeric($item)) {
+          $pidindex++;
+        }
+      }
+      $newpid = $_POST[$param][$listindex]['pids']['pidtext'];
+
+      if (!empty($newpid) && !in_array($newpid, $obj->pid_list)) {
+        try {
+          $obj->add_pids(array($newpid));
+          drupal_set_message(t('The pid %newpid has been added to %listname',
+          array(
+            '%listname' => $obj->bookmark_name,
+            '%newpid' => $newpid,
+          )
+      ));  
+        } 
+        catch (Exception $e) {
+          drupal_set_message($e->getMessage(), 'error');
+        }
+      }
+      else {
+      drupal_set_message(t("The pid %pid already exists in %listname",
+              array(
+                '%pid' => $new_pid,
+                '%listname' => $obj->bookmark_name,
+                )
+          ), 'error');    
+      }
+    }
+    else {
+      $obj = $form[$param][$listindex]['plo']['#value'];
+      drupal_set_message(t("Please enter a pid to add to %listname",
+                array(
+                  '%listname' => $obj->bookmark_name,
+                  )
+            ), 'error');  
+    }
+  }
+  $form[$param][$listindex]['#collapsed'] = FALSE;
+  return drupal_rebuild_form('islandora_bookmark_list_form', $form_state, $form);
+}
+
+/**
+ * AHAH callback for removing a user from a list.
+ * 
+ * @see islandora_pid_list_menu()
+ */
+function islandora_pid_list_remove_user_js($form, $form_state) {
+  module_load_include('inc', 'islandora_bookmark', 'Bookmark');
+  module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
+  global $user;
+    
+  $param = $form_state['clicked_button']['#parents'][0];
+  $listindex = $form_state['clicked_button']['#parents'][1];
+  $useroffset = $form_state['clicked_button']['#parents'][3];
+  $obj = $form[$param][$listindex]['plo']['#value'];
+  $listname = $obj->bookmark_name;
+  
+  // Needed to account for concurrent users making changes on lists.
+  $obj = get_pid_list_by_number($obj->bookmark_id);
+  
+  if (islandora_bookmark_object_access($obj, $listname)) {
+    $removeuser = $form[$param][$listindex]['users'][$useroffset]['user']['#value'];
+   
+    if ($removeuser == 0) {
+      $outputuser = t('Anonymous');
+    }
+    else {
+    $outputuser = user_load($removeuser)->name;  
+    }
+    
+    if ($removeuser == $user->uid) {
+     $yourself = TRUE;  
+    }
+    
+    if (!$yourself) {
+      drupal_set_message(t('The user %username has been removed from the list %listname',
+        array(
+          '%listname' => $obj->bookmark_name,
+          '%username' => $outputuser,
+        )
+      ));
+    }
+    else {
+      if ($obj->bookmark_owner == $yourself) {
+        drupal_set_message(t('The list %listname has been deleted',
+          array(
+            '%listname' => $obj->bookmark_name,
+          )
+        ));
+      }
+      else {
+        drupal_set_message(t('You have removed yourself from the list %listname',
+          array(
+            '%listname' => $obj->bookmark_name,
+          )
+        ));
+      }
+    }
+  $obj->remove_users(array($removeuser));  
+  $form_state['storage']['listid'] = $obj->bookmark_id;
+  }
+  return drupal_rebuild_form('islandora_bookmark_list_form', $form_state, $form);
+}
+
+/**
+ * AHAH callback for removing a pid from a list.
+ * 
+ * @see islandora_pid_list_menu() 
+ */
+function islandora_pid_list_remove_pid_js($form, $form_state) {
+  module_load_include('inc', 'islandora_bookmark', 'Bookmark');
+  module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
+   
+  $param = $form_state['clicked_button']['#parents'][0];
+  $listindex = $form_state['clicked_button']['#parents'][1];
+  $pidoffset = $form_state['clicked_button']['#parents'][3];
+  $obj = $form[$param][$listindex]['plo']['#value'];
+  $pidremove = $form[$param][$listindex]['pids'][$pidoffset]['pid']['#value'];
+  $listname = $obj->bookmark_name;
+    
+  // Needed to account for concurrent users making changes on lists.
+  $obj = get_pid_list_by_number($obj->bookmark_id);
+ 
+  if (islandora_bookmark_object_access($obj, $listname)) {
+    drupal_set_message(t('The pid %pidname has been removed from %listname',
+      array(
+        '%listname' => $obj->bookmark_name,
+        '%pidname' => $pidremove,
+      )
+    )); 
+    $obj->remove_pids(array($pidremove));
+  }
+ 
+  $form[$param][$listindex]['#collapsed'] = FALSE;
+ return drupal_rebuild_form('islandora_bookmark_list_form', $form_state, $form);
+}
+
+/**
+ * AHAH callback for adding a pid to a list
+ * 
+ * @see islandora_pid_list_menu()
+ */
+function islandora_pid_list_add_user_js($form, $form_state) {
+  module_load_include('inc', 'islandora_bookmark', 'Bookmark');
+  module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
+    
+  $param = $form_state['clicked_button']['#parents'][0];
+  $listindex = $form_state['clicked_button']['#parents'][1];
+  $useroffset = $form_state['clicked_button']['#parents'][3];
+  $obj = $form[$param][$listindex]['plo']['#value'];
+  $listname = $obj->bookmark_name;
+  $adduser = $form_state['values'][$param][$listindex]['users']['listusers']['#value'];
+   
+  // Needed to account for concurrent users making changes on lists.
+  $obj = get_pid_list_by_number($obj->bookmark_id);
+ 
+  if (islandora_bookmark_object_access($obj, $listname)) {
+    if (strlen($adduser)) {
+      if ($adduser == 0) {
+        $outputuser = t('Anonymous');
+      }
+      else {
+        $outputuser = user_load($adduser)->name;  
+      } 
+      drupal_set_message(t('The user %adduser has been added to %listname',
+        array(
+          '%listname' => $obj->bookmark_name,
+          '%adduser' => $outputuser,
+        )
+      )); 
+      $obj->add_users(array($adduser));
+    }
+    else {
+      drupal_set_message(t("Please select a user to add to %listname",
+        array(
+          '%listname' => $obj->bookmark_name,
+          )
+      ), 'error');  
+    }
+  }
+  
+  $form_state['storage']['listid'] = $obj->bookmark_id;
+  return drupal_rebuild_form('islandora_bookmark_list_form', $form_state, $form);
+}
+
+/**
+ * AHAH callback from removing a pid from a list.
+ * 
+ * @see islandora_pid_list_menu() 
+ */
+function islandora_pid_list_remove_list_js($form, $form_state) {
+  module_load_include('inc', 'islandora_bookmark', 'Bookmark');
+  module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
+  
+  $param = $form_state['clicked_button']['#parents'][0];
+  $listindex = $form_state['clicked_button']['#parents'][1];
+  $useroffset = $form_state['clicked_button']['#parents'][3];
+  
+  $obj = $form[$param][$listindex]['plo']['#value'];
+  
+  $listname = $obj->bookmark_name;
+    
+  // Needed to account for concurrent users making changes on lists.
+  $obj = get_pid_list_by_number($obj->bookmark_id);
+  
+  if (islandora_bookmark_object_access($obj, $listname)) {
+    drupal_set_message(t('The list %listname has been deleted',
+            array(
+              '%listname' => $obj->bookmark_name,
+            )
+    ));    
+    $obj->remove_list();
+  }  
+  $form_state['storage']['listid'] = $obj->bookmark_id;
+  return drupal_rebuild_form('islandora_bookmark_list_form', $form_state, $form);
+}
+
+/**
+ * AHAH callback for updating the name of a list.
+ * 
+ * @see islandora_pid_list_menu() 
+ */
+function islandora_pid_list_update_name_js() {
+  module_load_include('inc', 'islandora_bookmark', 'Bookmark');
+  module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
+  
+  $param = $form_state['clicked_button']['#parents'][0];
+  $listindex = $form_state['clicked_button']['#parents'][1];
+  $useroffset = $form_state['clicked_button']['#parents'][3];
+  $obj = $form[$param][$listindex]['plo']['#value'];  
+  $listname = $obj->bookmark_name;
+    
+  // Needed to account for concurrent users making changes on lists.
+  $obj = get_pid_list_by_number($obj->bookmark_id);
+ 
+  if (islandora_bookmark_object_access($obj, $listname)) {
+    if ($obj->bookmark_name != $newlistname) {
+      if (ctype_space($newlistname) || $newlistname == '') {
+        drupal_set_message(t('The list %listname must have a name!',
+            array(
+            '%listname' => $obj->bookmark_name,  
+            )
+        ), 'error');
+      }
+      else {
+        drupal_set_message(t('The list %beforelist has had its name changed to %afterlist',
+            array(
+              '%beforelist' => $obj->bookmark_name,
+              '%afterlist' => $newlistname,
+            )
+        ));    
+        $obj->change_list_name($newlistname);    
+      }
+    }
+  }
+  
+  $form[$param][$listindex]['#collapsed'] = FALSE;
+  drupal_rebuild_form('islandora_bookmark_list_form', $form_state, $form);
+}
+
+/**
+ * AHAH callback for a user attempting to remove a pid from a list they do not
+ * have management access to.
+ * 
+ * @see islandora_pid_list_menu() 
+ */
+function islandora_pid_list_no_remove_js($form, $form_state) {
+  module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
+  module_load_include('inc', 'islandora_bookmark', 'Bookmark');
+  global $user;
+  
+  $param = $form_state['clicked_button']['#parents'][0];
+  $listindex = $form_state['clicked_button']['#parents'][1];
+  $type = $form_state['clicked_button']['#parents'][2];
+  $useroffset = $form_state['clicked_button']['#parents'][3];
+  
+  if ($type == 'users') {
+    $typeoutput = 'user';
+  }
+  else {
+    $typeoutput = 'pid';
+  }
+  
+  $typename = user_load($form[$param][$listindex][$type][$useroffset][$typeoutput]['#value']);
+  $typename = $typename->name;
+  
+  $obj = $form[$param][$listindex]['plo']['#value'];  
+  $listname = $obj->bookmark_name;
+  
+  drupal_set_message(t("You do not have access to remove the %type %typename from the list %listname",
+      array(
+        '%typename' => $typename,
+        '%listname' => $obj->bookmark_name,
+        '%type' => $typeoutput,
+      )
+  ), 'error');
+  
+  $form[$param][$listindex]['#collapsed'] = FALSE;
+  return drupal_rebuild_form('islandora_bookmark_list_form', $form_state, $form);
+}
+
+/**
+ * Checks to see if a user modified the specified list concurrently.
+ * If the current user was removed from the list or the list itself was removed
+ * this function will return false and display errors.
+ * 
+ * @global integer $user
+ *
+ * @param PidList $obj
+ *   The PidList object that is being checked.
+ * 
+ * @param string $listname
+ *   Name of the list, used for output to the user.
+ * 
+ * @return boolean 
+ */
+function islandora_bookmark_object_access(Bookmark $obj, $listname) {
+  global $user;
+ 
+  if (!$obj->bookmark_session) {
+    if (is_null($obj->bookmark_name)) {
+      drupal_set_message(t("The list %listname no longer exists.",
+          array(
+            '%listname' => $listname,
+            )
+        ), 'error'); 
+      return FALSE;
+    }
+    elseif (in_array($user->uid, $obj->user_list) || user_access("Manage other users' pidlists")) {
+      return TRUE;
+    }
+    else {
+      drupal_set_message(t("You no longer have access to the list %listname",
+          array(
+            '%listname' => $obj->bookmark_name,
+            )
+        ), 'error');
+      return FALSE;
+    }
+  }
+  else {
+    return TRUE;
+  }
+}
+
+function islandora_bookmark_form_table(array $bookmark_objs) {
+  $bookmark_ids = array();
+  foreach ($bookmark_objs as $bookmark) {
+    $bookmark_ids[] = $bookmark->bookmark_id; 
+  }
+  
+  /*$table = array(
+    '#header' => array(theme('table_select_header_cell'), t('Title'), t('Owner'), ''),
+    '#theme' => 'theme_islandora_bookmark_form_table',
+    '#tree' => TRUE,
+    'rows' => array(),
+    'selections' => array(
+      '#type' => 'checkboxes',
+      '#options' => array_fill_keys($bookmark_ids, ''),
+    ),
+  );
+  $row_count = 0;
+  $rows = &$table['rows'];
+  foreach ($bookmark_objs as $bookmark) {
+    $owner = user_load($bookmark->bookmark_owner);
+    if ($bookmark->bookmark_owner == 0) {
+      $owner_output = t('Anonymous');
+    }
+    else {
+     $owner_output = $owner->name;
+    }
+    
+    $rows[] = array(
+      '#listid' => $bookmark->bookmark_id,
+      'title' => array('#markup' => l(check_plain($bookmark->bookmark_name), "islandora_bookmark/list/$bookmark->bookmark_id")),
+      'owner' => array('#markup' => check_plain($owner_output)),
+      'remove' => array(
+        '#type' => 'submit',
+        '#value' => t('Remove'),
+        '#name' => 'remove-citation' . $row_count, // Give a unique name to each button
+        '#listid' => $bookmark->bookmark_id,
+        '#submit' => array('islandora_bibliography_form_remove_citation_submit')
+      )
+    );
+    $row_count++;
+  }*/
+  $header = array(
+    'bookmark_name' => t('Name'),
+    'bookmark_owner' => t('Owner'),
+  );
+  $options = array();
+  foreach ($bookmark_objs as $bookmark) {
+    $owner = user_load($bookmark->bookmark_owner);
+    if ($bookmark->bookmark_owner == 0) {
+      $owner_output = t('Anonymous');
+    }
+    else {
+     $owner_output = $owner->name;
+    }
+    
+    $options[$bookmark->bookmark_id] = array(
+      'bookmark_name' => l(check_plain($bookmark->bookmark_name), "islandora_bookmark/list/$bookmark->bookmark_id"),
+      'bookmark_owner' => $bookmark->bookmark_owner,
+    ); 
+  }
+  
+  $table = array(
+    '#type' => 'tableselect',
+    '#header' => $header,
+    '#options' => $options,
+  );
+  return $table;
+}
+

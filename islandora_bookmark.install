@@ -1,0 +1,71 @@
+<?php
+
+/**
+* @file
+* Install and uninstall functions for the islandora_bookmark module.
+*/
+
+function islandora_bookmark_schema() {
+
+  $schema['islandora_bookmark_list_users'] = array(
+    'description' => 'Stores users and their lists',
+    'fields' => array(
+      'uid' => array(
+        'description' => 'The User ID.',
+        'type' => 'int',
+        'length' => 11,
+        'not null' => TRUE,
+      ),
+      'listid' => array(
+        'description' => 'The ID of the list',
+        'type' => 'int',
+        'length' => 11,
+        'not null' => TRUE,
+      ), 
+     ),
+   );
+
+  $schema['islandora_bookmark_list_pids'] = array(
+    'description' => 'Stores pids and the lists they are associated to',
+    'fields' => array(
+        'listid' => array(
+        'description' => 'The ID of the list',
+        'type' => 'int',
+        'length' => 11,
+        'not null' => TRUE,
+      ),
+      'pidid' => array(
+        'description' => 'The PID of the Fedora Object.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+    ),
+  );
+  
+  $schema['islandora_bookmark_list_names'] = array(
+    'description' => 'Stores lists and their associated names',
+    'fields' => array(
+        'listid' => array(
+        'description' => 'The ID of the list',
+        'type' => 'serial',
+        'length' => 11,
+        'not null' => TRUE,
+      ),
+      'listname' => array(
+        'description' => 'The name of the list.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'listowner' => array(
+        'description' => 'The user ID of who owns the list.',
+        'type' => 'int',
+        'length' => 11,
+      ),
+    ),
+    'primary key' => array('listid'),
+  );
+
+  return $schema;
+}
