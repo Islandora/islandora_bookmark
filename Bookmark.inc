@@ -140,12 +140,12 @@ class Bookmark {
     $this->user_list = array_diff($this->user_list, $users);
     if (!$this->bookmark_session) {
       if ($this->management_access()) {
+        if (in_array($this->bookmark_owner, $users)) {
+          $this->remove_list();  
+          return;
+        }
         foreach ($users as $value) {
           $this->remove_user_db($value);
-        }
-        // Modify this to delete the list and all corresponding entries or call the remove_list func?
-        if (in_array($this->bookmark_owner, $users)) {
-          $this->remove_list();          
         }
       }
       elseif (in_array($this->user_id, $users)) {
@@ -159,6 +159,10 @@ class Bookmark {
       $superserial = unserialize($_SESSION['islandora_bookmark'][$this->bookmark_id]);
 
       foreach ($superserial->user_list as $key => $value) {
+        if (in_array($this->bookmark_owner, $users)) {
+          $this->remove_list();  
+          return;
+        }
         if (in_array($value, $users)) {
           unset($superserial->user_list[$key]);
           $_SESSION['islandora_bookmark'][$this->bookmark_id] = serialize($superserial);
@@ -361,7 +365,7 @@ class Bookmark {
    */
   public function change_list_name($name) {
     $this->bookmark_name = $name;
-    if (!$session) {
+    if (!$this->bookmark_session) {
       db_update('islandora_bookmark_list_names')
         ->fields(array(
             'listowner' => $name,
@@ -370,8 +374,7 @@ class Bookmark {
         ->execute();
     }
     else {
-      $superserial = unserialize($_SESSION['islandora_bookmark'][$this->bookmark_id]);
-      $superserial->bookmark_name[$key][$this->bookmark_id][$name];   
+       $_SESSION['islandora_bookmark'][$this->bookmark_id] = serialize($this);
     }
   }
   
