@@ -68,8 +68,8 @@ class Bookmark {
    * @param array $params 
    */
   public function __construct($params = array()) {
-    $this->user_list = $params['bookmark_users'];
-    $this->user_id = $params['user_id'];  
+    $this->user_id = $params['user_id'];
+    
     if (!empty($params['bookmark_session'])) {
       $this->bookmark_session = $params['bookmark_session'];
     }
@@ -77,7 +77,9 @@ class Bookmark {
     if (!empty($params['bookmark_pids'])) {
       $this->pid_list = $params['bookmark_pids'];
     }
-
+    if (!empty($params['bookmark_users'])) {
+      $this->user_list = $params['bookmark_users'];
+    }
     if (!empty($params['bookmark_name'])) {
       $this->bookmark_name = $params['bookmark_name'];
     }
@@ -368,7 +370,7 @@ class Bookmark {
     if (!$this->bookmark_session) {
       db_update('islandora_bookmark_list_names')
         ->fields(array(
-            'listowner' => $name,
+            'listname' => $name,
           ))
         ->condition('listid', $this->bookmark_id)
         ->execute();
