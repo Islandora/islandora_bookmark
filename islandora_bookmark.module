@@ -289,7 +289,6 @@ function islandora_bookmark_remove_self($form, &$form_state) {
 }
 
 function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
-  dsm($form_state, 'fs');
   global $user;
   module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
   module_load_include('inc', 'islandora', 'includes/utilities');
