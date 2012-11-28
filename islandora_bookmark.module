@@ -58,10 +58,6 @@ function islandora_bookmark_user_login(&$edit, &$account) {
   }
 }
 
-function test($form, &$form_state) {
-  
-}
-
 function islandora_bookmark_islandora_view_object_alter(&$fedora_object, &$arr) {
   $arr['islandora_bookmark'] = drupal_render(drupal_get_form('islandora_bookmark_fedora_repository_object_form', $fedora_object->id));
 }
