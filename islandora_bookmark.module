@@ -289,6 +289,7 @@ function islandora_bookmark_remove_self($form, &$form_state) {
 }
 
 function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
+  dsm($form_state, 'fs');
   global $user;
   module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
   module_load_include('inc', 'islandora', 'includes/utilities');
@@ -357,7 +358,7 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
       '#type' => 'fieldset',
       '#title' => t('Management Functions'),
       '#weight' => 20,
-      '#collapsed' => TRUE,
+      '#collapsed' => isset($form_state['islandora_bookmark_collapsed']) ? $form_state['islandora_bookmark_collapsed'] : TRUE,
       '#collapsible' => TRUE,
     );
     $form['bookmarks']['management']['listname'] = array(
@@ -795,7 +796,7 @@ function islandora_bookmark_remove_user($form, $form_state) {
   ));
   
   $bookmark_object->remove_users(array($remove_user));  
-  
+  $form_state['islandora_bookmark_collapsed'] = FALSE;
   return drupal_rebuild_form('islandora_bookmark_detailed_form', $form_state, $form);
 }
 
@@ -832,7 +833,7 @@ function islandora_bookmark_add_user($form, $form_state) {
         )
     ), 'error');  
   }
-    
+  $form_state['islandora_bookmark_collapsed'] = FALSE;  
   return drupal_rebuild_form('islandora_bookmark_detailed_form', $form_state, $form);
 }
 
@@ -890,7 +891,7 @@ function islandora_bookmark_update_name($form, $form_state) {
       $bookmark_object->change_list_name($newlist_name);    
     }
   }
-  
+  $form_state['islandora_bookmark_collapsed'] = FALSE;
   return drupal_rebuild_form('islandora_bookmark_detailed_form', $form_state, $form);
 }
 
