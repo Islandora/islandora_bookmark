@@ -230,3 +230,26 @@ function get_pid_list_by_number($listid) {
   return $templist;
 }
 
+
+function get_bookmarks_visible_to_user($pid, $uid) {
+  module_load_include('inc', 'islandora_bookmark', 'Bookmark');
+  
+  $lists = array();
+  // SESSION FIRST
+  if ($uid == 0 && !empty($_SESSION['islandora_bookmark'])) {
+    foreach ($_SESSION['islandora_bookmark'] as $value) {
+      $templist = unserialize($value);
+        if (in_array($pid, $templist->pid_list)) {
+          $lists[$templist->bookmark_id] = $templist->bookmark_id;
+        }
+    }
+  }
+  else {
+    // DB
+    $list_result = db_query('SELECT u.listid from {islandora_bookmark_list_users} as u INNER JOIN {islandora_bookmark_list_pids} as p ON u.listid = p.listid WHERE uid = :uid AND pidid = :pid', array(':uid' => $uid, ':pid' => $pid));
+    foreach ($list_result as $record) {
+      $lists[$record->listid] = $record->listid;
+    }
+  }
+  return $lists;
+}

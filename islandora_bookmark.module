@@ -58,6 +58,82 @@ function islandora_bookmark_user_login(&$edit, &$account) {
   }
 }
 
+function test($form, &$form_state) {
+  
+}
+
+function islandora_bookmark_islandora_view_object_alter(&$fedora_object, &$arr) {
+  $arr['islandora_bookmark'] = drupal_render(drupal_get_form('islandora_bookmark_fedora_repository_object_form', $fedora_object->id));
+}
+
+function islandora_bookmark_fedora_repository_object_form($form, &$form_state, $pid) {
+  global $user;
+  
+  module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
+ 
+  $containing_lists = get_bookmarks_visible_to_user($pid, $user->uid);
+   
+  if (count($containing_lists) > 0) {
+    $form = array(
+      '#prefix' => '<div id="islandora_bookmark">',
+      '#suffix' => '</div>',
+      'title' => array(
+        '#type' => 'item',
+        '#markup' => t('In Bookmarks'),
+        '#prefix' => '<h3>',
+        '#suffix' => '</h3>',
+      ),
+    );
+    $form['ul'] = array(
+      '#prefix' => '<ul>',
+      '#suffix' => '</ul>',
+    );
+    foreach ($containing_lists as $key => $value) {
+      $bookmark_object = get_bookmark_by_number($value);
+      $form['ul'][$bookmark_object->bookmark_name] = array(
+        '#type' => 'item',
+        '#markup' => l($bookmark_object->bookmark_name, 'islandora_bookmark/listid/' . $bookmark_object->bookmark_id, array(
+              'attributes' => array(
+                'target' => '_blank'
+                ))),
+        '#prefix' => '<li>',
+        '#suffix' => '</li>',
+      );
+    }
+    
+  }
+  
+  $owned_results = db_query('SELECT listname, listid from {islandora_bookmark_list_names} WHERE listowner = :listowner', array(':listowner' => $user->uid));
+  $owned_lists = array();
+  foreach ($owned_results as $record) {
+    $owned_lists[$record->listid] = $record->listname;
+  }
+ 
+  if (count($owned_lists) > 0) {
+    $options = array_diff_key($owned_lists, $containing_lists);
+    if (count($options) > 0) {
+      $form['islandora_bookmark']['add_bookmarks'] = array(
+        '#type' => 'select',
+        '#options' => $options,
+      );
+      $form['islandora_bookmark']['add_button'] = array(
+        '#type' => 'submit',
+        '#value' => t('Add object to bookmark'),
+        '#ajax' => array(
+             'event' => 'click',
+             'callback' => 'islandora_bookmark_add_pid',
+             'wrapper' => 'islandora_bookmark',
+             'method' => 'replace',          
+           ),
+      );
+    }
+  }
+   
+  $form_state['islandora_bookmark_pid'] = $pid;
+  return $form;
+}
+
+
 /*
  * Implementation of hook_menu().
  */
@@ -97,6 +173,21 @@ $items['islandora_bookmark/add'] = array(
   'access arguments' => array('access content'),
 );
 
+$items['islandora_bookmark/delete_bookmark/%'] = array(
+  'title' => t('Delete list'),
+  'page callback' => 'drupal_get_form',
+  'page arguments' => array('islandora_bookmark_delete_bookmark_confirm', 2),
+  'access callback' => 'islandora_bookmark_delete_bookmark_access',
+  'access arguments' => array(2),
+  'type' => MENU_CALLBACK,
+);
+$items['islandora_bookmark/remove_self/%'] = array(
+  'title' => t('Remove self'),
+  'page callback' => 'drupal_get_form',
+  'page arguments' => array('islandora_bookmark_remove_self_confirm', 2),
+  'access callback' => 'islandora_bookmark_access',
+  'access arguments' => array(2),
+);
   $items['admin/config/islandora_bookmark'] = array(
       'title' => 'Islandora Pid List',
       'description' => 'Settings for the Islandora Pid List module.',
@@ -108,9 +199,65 @@ $items['islandora_bookmark/add'] = array(
   return $items;
 }
 
+function islandora_bookmark_delete_bookmark_confirm($form, &$form_state, $list_id) {
+  module_load_include('inc', 'islandora_bookmark', 'Bookmark');
+  module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
+  
+  $bookmark_object = get_bookmark_by_number($list_id);
+  $form_state['bookmark_object'] = $bookmark_object;
+  return confirm_form($form, t('Are you sure you want to delete the bookmark %bookmark_name ?', array('%bookmark_name' => $bookmark_object->bookmark_name)), 'islandora_bookmark/listid/'.$list_id, t('This action cannot be undone.'),
+    	t('Delete'),
+    	t('Cancel'));
+ 
+}
+
+function islandora_bookmark_delete_bookmark_confirm_submit($form, &$form_state) {
+  module_load_include('inc', 'islandora_bookmark', 'Bookmark');
+  module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
+  
+  $bookmark_object = $form_state['bookmark_object']; 
+    
+  drupal_set_message(t('The list %listname has been deleted',
+          array(
+            '%listname' => $bookmark_object->bookmark_name,
+          )
+  ));    
+  $bookmark_object->remove_list();
+  drupal_goto('islandora_bookmark');
+}
+
+function islandora_bookmark_remove_self_confirm($form, &$form_state, $list_id) {
+  module_load_include('inc', 'islandora_bookmark', 'Bookmark');
+  module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
+  
+  $bookmark_object = get_bookmark_by_number($list_id);
+  $form_state['bookmark_object'] = $bookmark_object;
+  return confirm_form($form, t('Are you sure you want to remove yourself from the bookmark %bookmark_name ?', array('%bookmark_name' => $bookmark_object->bookmark_name)), 'islandora_bookmark/listid/'.$list_id, t('This action cannot be undone.'),
+    	t('Delete'),
+    	t('Cancel'));
+ 
+}
+
+function islandora_bookmark_remove_self_confirm_submit($form, &$form_state) {
+  module_load_include('inc', 'islandora_bookmark', 'Bookmark');
+  module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
+  global $user;
+  
+  $bookmark_object = $form_state['bookmark_object']; 
+ 
+  drupal_set_message(t('You have removed yourself from the list %listname',
+      array(
+        '%listname' => $bookmark_object->bookmark_name,
+      )
+    ));
+   
+  $bookmark_object->remove_users(array($user->uid));
+  drupal_goto('islandora_bookmark');
+}
+
 function islandora_bookmark_detailed_form_submit($form, $form_state) {
   module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
- 
+  
   foreach ($_POST as $key => $value) {
     preg_match('/remove_pid_(.*)/', $key, $match);
     if ($match) {
@@ -127,7 +274,22 @@ function islandora_bookmark_detailed_form_submit($form, $form_state) {
           '%pidname' => $match[1],
         )
       )); 
-  } 
+  }
+  else {
+    foreach($form_state['values']['bookmarks']['fieldset']['table'] as $checkbox => $value) {
+      if ($value !== 0) {
+        dsm($checkbox, 'this pid is checked');
+      }
+    }
+  }
+}
+
+function islandora_bookmark_delete_bookmark($form, &$form_state) {
+  drupal_goto('islandora_bookmark/delete_bookmark/'.$form_state['bookmark_object']->bookmark_id);
+}
+
+function islandora_bookmark_remove_self($form, &$form_state) {
+   drupal_goto('islandora_bookmark/remove_self/'.$form_state['bookmark_object']->bookmark_id);
 }
 
 function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
@@ -151,12 +313,12 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
      ),
   );
   
-    // Loop the pids and call the hook view func?
+  // Loop the pids and determine how to display the markup
   $rows = array();  
   foreach ($bookmark->pid_list as $pid) {
     $fedora_object = islandora_object_load($pid);
     $rows[$pid] = array(
-      'markup' => islandora_bookmark_islandora_bookmark_detailed_view($fedora_object),
+      'markup' => islandora_bookmark_generate_markup($fedora_object),
     );
   }
 
@@ -183,6 +345,15 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
    '#options' => $rows,
    '#empty' => t('No pids currently associated.'),
   );
+  $options = array('test');
+  $form['bookmarks']['fieldset']['export_options'] = array(
+    '#type' => 'select',
+    '#options' => $options,
+  );
+  $form['bookmarks']['fieldset']['export'] = array(
+    '#type' => 'submit',
+    '#value' => t('Export'),
+  );
 
   if ($bookmark->bookmark_owner === $user->uid) {
     // Load 'management' fieldset
@@ -190,6 +361,8 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
       '#type' => 'fieldset',
       '#title' => t('Management Functions'),
       '#weight' => 20,
+      '#collapsed' => TRUE,
+      '#collapsible' => TRUE,
     );
     $form['bookmarks']['management']['listname'] = array(
        '#type' => 'textfield',
@@ -208,8 +381,8 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
      );
 
      $form['bookmarks']['management']['changename'] = array(
-       '#type' => 'image_button',
-       '#src' => drupal_get_path('module', 'islandora_pid_list') . '/images/add.png', 
+       '#type' => 'button',
+       '#value' => t('Change'),
        '#suffix' => '</div>',
        '#ajax' => array(
            'event' => 'click',
@@ -220,24 +393,11 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
        '#weight' => 20,
      );  
 
-     $form['bookmarks']['management']['labelremove'] = array(
-       '#type' => 'item',
-       '#title' => t('Delete this list'),
-       '#weight' => 20000,
-       '#prefix' => '<div class="removelist">',
-     );
-
      $form['bookmarks']['management']['remove'] = array(
-       '#type' => 'image_button',
-       '#weight' => 20001,
-       '#src' => drupal_get_path('module', 'islandora_pid_list') . '/images/purge.gif', 
-       '#suffix' => '</div>',
-       '#ajax' => array(
-           'event' => 'click',
-           'callback' => 'islandora_bookmark_remove_list',
-           'wrapper' => 'islandora_bookmark_detailed_overview',
-           'method' => 'replace',
-       ),
+       '#type' => 'submit',
+       '#value' => t('Delete this bookmark'),
+       '#submit' => array('islandora_bookmark_delete_bookmark'),
+       '#weight' => 25,
      );
 
 
@@ -257,7 +417,7 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
      $fku =& $form['bookmarks']['management']['users'];
 
 
-     if (count($bookmark->user_list) == 0) {
+     if (count($bookmark->user_list) == 1) {
          $fku['empty'] = array(
            '#type' => 'item',
            '#markup' => t('There are no users associated with this list'),
@@ -265,7 +425,12 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
          );
      }
      else {
-       foreach ($bookmark->user_list as $itr => $piduser) {
+       // Remove the user from the populated shared users
+       $key = array_search($user->uid, $bookmark->user_list);
+       $bookmark_users = $bookmark->user_list;
+       unset($bookmark_users[$key]);
+      
+       foreach ($bookmark_users as $itr => $piduser) {
          $tempuser = user_load($piduser);
            if ($tempuser->uid == 0) {
              $user_output = t('Anonymous');
@@ -290,8 +455,8 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
                  '#value' => $bookmark->bookmark_id,
                ),
                'remove' => array(
-                 '#type' => 'image_button',
-                 '#src' => drupal_get_path('module', 'islandora_pid_list') . '/images/minus_small.png',
+                 '#type' => 'button',
+                 '#value' => t('Remove'),
                  '#ajax' => array(
                    'event' => 'click',
                    'callback' => 'islandora_bookmark_remove_user',
@@ -337,8 +502,8 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
          '#prefix' => '<div class="addusertolist">',
        );
         $fku['listadd'] = array(
-         '#type' => 'image_button',
-         '#src' => drupal_get_path('module', 'islandora_pid_list') . '/images/add.png', 
+         '#type' => 'button',
+         '#value' => t('Add'),
          '#suffix' => '</div>',
          '#weight' => 10001, 
          '#ajax' => array(
@@ -348,62 +513,18 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
            'method' => 'replace',
          ),
        ); 
-       $fkp =& $form['bookmarks']['management'];  
-       $fkp['pidtext'] = array(
-         '#type' => 'textfield',
-         '#title' => t('Add a PID'),
-         '#size' => 20,
-         '#prefix' => '<div class="addpid">',
-         '#suffix' => '</div>',
-         '#weight' => 10000,
-         '#ajax' => array(
-           'event' => '',
-           'keypress' => TRUE,
-           'callback' => 'islandora_bookmark_add_pid',
-           'wrapper' => "islandora_bookmark_detailed_overview",
-           'method' => 'replace',          
-         ),
-       );
-
-       $fkp['add_button'] = array(
-         '#type' => 'image_button',
-         '#src' => drupal_get_path('module', 'islandora_pid_list') . '/images/add.png', 
-         '#weight' => 10001,  
-         '#ajax' => array(
-           'event' => 'click',
-           'callback' => 'islandora_bookmark_add_pid',
-           'wrapper' => "islandora_bookmark_detailed_overview",
-           'method' => 'replace',
-         ),
-       );
+       
+   }
+   else {
+     $form['bookmarks']['remove_self'] = array(
+       '#type' => 'submit',
+       '#value' => t('Remove yourself from this bookmark?'),
+       '#submit' => array('islandora_bookmark_remove_self'),
+       '#weight' => 25,
+     );
    }
    $form_state['bookmark_object'] = $bookmark;
   return $form;
-}
-/**
- * Submit handler to remove a user's self from a shared list.
- * 
- * @global type $user
- * 
- * @param array $form
- * 
- * @param array $form_state
- */
-function islandora_bookmark_remove_self($form, &$form_state) {
-  global $user;
-  
-  $bookmark_object = get_bookmark_by_number($form_state['bookmark_id']);
-  
-  if (islandora_bookmark_concurrency_check($bookmark_object, $bookmark_object->bookmark_name)) {
-    drupal_set_message(t('You have removed yourself from the list %listname',
-      array(
-        '%listname' => $bookmark_object->bookmark_name,
-      )
-    ));
-   
-    $bookmark_object->remove_users(array($user->uid));  
-  }
-  drupal_goto('islandora_bookmark');
 }
 
 /**
@@ -444,6 +565,40 @@ function islandora_bookmark_access($list_id) {
   return $bookmark_access;
   
 }
+
+/**
+ * Used to determine whether a current user can access the menu path.
+ * 
+ * @global type $user
+ * 
+ * @param int $list_id
+ * 
+ * @return boolean
+ */
+function islandora_bookmark_delete_bookmark_access($list_id) {
+  global $user;
+  
+  preg_match('/session_/', $list_id, $match);
+  
+  if ($match) {
+    $bookmark_access = TRUE;
+  }
+  else {
+    $bookmark_access = FALSE;
+    $owner_query = db_query('SELECT listowner FROM {islandora_bookmark_list_names} WHERE listid = :listid ORDER BY listid', array(':listid' => $list_id))->fetchObject();
+
+    if ($owner_query && $owner_query->listowner === $user->uid) {
+      $bookmark_access = TRUE;
+    }
+    else {
+      return FALSE;
+    }
+  }
+  
+  return $bookmark_access;
+  
+}
+
 /**
  * Form constructor for the Bookmark overview form.
  * 
@@ -513,8 +668,7 @@ function islandora_bookmark_overview_form($form, &$form_state) {
  * @see islandora_bookmark_add_form_submit
  */
 function islandora_bookmark_add_form($form_state) {
-  global $user;
-      
+       
   $form = array(
     '#title' => t('Add'),
     '#tree' => TRUE,
@@ -556,14 +710,12 @@ function islandora_bookmark_add_form_submit(array $form, array &$form_state) {
  
   // Create a new list
   if (!ctype_space($bookmark_name) && $bookmark_name != '') {
-    $paramusers = array();
-    $parampids = array();
-
     $params = array(
       'retrieve' => FALSE,
       'user_id' => $user->uid,
       'bookmark_owner' => $user->uid,
       'bookmark_name' => $bookmark_name,
+      'bookmark_users' => array($user->uid),
     );
 
     if ($user->uid == 0) {
@@ -592,48 +744,28 @@ function islandora_bookmark_add_form_submit(array $form, array &$form_state) {
  * Callback for adding a pid to a list.
  * 
  */
-function islandora_bookmark_add_pid($form, $form_state) {
+function islandora_bookmark_add_pid($form, &$form_state) {
   
   module_load_include('inc', 'islandora_bookmark', 'Bookmark');
   module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
+   
+  $bookmark_object = get_bookmark_by_number($form_state['values']['add_bookmarks']);
+  dsm($bookmark_object, 'bookmark');
   
-  $bookmark_object = $form_state['bookmark_object'];
-  $list_name = $bookmark_object->bookmark_name;
-  $pid_text = $_POST['bookmarks']['management']['pidtext'];
-  
-  if (strlen($pid_text) != 0) {
-    if (!in_array($pid_text, $bookmark_object->pid_list)) {
       try {
-        $bookmark_object->add_pids(array($pid_text));
+        $bookmark_object->add_pids(array($form_state['islandora_bookmark_pid']));
         drupal_set_message(t('The pid %newpid has been added to %listname',
           array(
             '%listname' => $bookmark_object->bookmark_name,
-            '%newpid' => $pid_text,
+            '%newpid' => $form_state['islandora_bookmark_pid'],
           )
         ));  
       } 
       catch (Exception $e) {
         drupal_set_message($e->getMessage(), 'error');
       }
-    }
-    else {
-    drupal_set_message(t("The pid %pid already exists in %listname",
-            array(
-              '%pid' => $pid_text,
-              '%listname' => $bookmark_object->bookmark_name,
-              )
-        ), 'error');    
-    }
-  }
-  else {
-    drupal_set_message(t("Please enter a pid to add to %listname",
-              array(
-                '%listname' => $bookmark_object->bookmark_name,
-                )
-          ), 'error');  
-  }
     
-  return drupal_rebuild_form('islandora_bookmark_detailed_form', $form_state, $form);
+  return drupal_rebuild_form('islandora_bookmark_fedora_repository_object_form', $form_state, $form);
 }
 
 /**
@@ -643,13 +775,12 @@ function islandora_bookmark_add_pid($form, $form_state) {
 function islandora_bookmark_remove_user($form, $form_state) {
   module_load_include('inc', 'islandora_bookmark', 'Bookmark');
   module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
-  global $user;
   
   $param = $form_state['clicked_button']['#parents'][0];
   $list_index = $form_state['clicked_button']['#parents'][1];
   $user_offset = $form_state['clicked_button']['#parents'][3];
   $bookmark_object = $form_state['bookmark_object'];
-  $list_name = $bookmark_object->bookmark_name;
+  
   
   $remove_user = $form[$param][$list_index]['users'][$user_offset]['user']['#value'];
 
@@ -681,7 +812,6 @@ function islandora_bookmark_add_user($form, $form_state) {
   module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
     
   $bookmark_object = $form_state['bookmark_object'];
-  $list_name = $bookmark_object->bookmark_name;
   $add_user = $_POST['bookmarks']['management']['users']['listusers'];
  
   if (strlen($add_user)) {
@@ -719,8 +849,7 @@ function islandora_bookmark_remove_list($form, $form_state) {
   module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
   
   $bookmark_object = $form_state['bookmark_object']; 
-  $list_name = $bookmark_object->bookmark_name;
-  
+    
   drupal_set_message(t('The list %listname has been deleted',
           array(
             '%listname' => $bookmark_object->bookmark_name,
@@ -807,7 +936,7 @@ function islandora_bookmark_form_overview_table(array $bookmark_objs) {
 function islandora_bookmark_detailed_remove_pid($form, &$form_state) {
   module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
   $pid_remove = $form_state['clicked_button']['#pid'];
-  
+  $bookmark_object = $form_state['bookmark'];
   drupal_set_message(t('The pid %pidname has been removed from %listname',
       array(
         '%listname' => $bookmark_object->bookmark_name,
@@ -819,20 +948,19 @@ function islandora_bookmark_detailed_remove_pid($form, &$form_state) {
   return drupal_rebuild_form('islandora_bookmark_detailed_form', $form_state, $form);
 }
 
-function islandora_bookmark_islandora_bookmark_detailed_view($fedora_object) {
+function islandora_bookmark_generate_markup($fedora_object) {
   module_load_include('inc', 'islandora', 'includes/utilities');
  
   // Accumulate the output.
   $output = array();
 
   // Call cmodel oriented variants first.
-  foreach (islandora_build_hook_list('islandora_bookmark_detailed_view', $fedora_object->models) as $hook) {
-    dsm($hook, 'hook');
-    /*$temp = module_invoke_($hook, $fedora_object);
+  foreach (islandora_build_hook_list('islandora_bookmark_object_markup', $fedora_object->models) as $hook) {
+    $temp = module_invoke_all($hook, $fedora_object);
     
     if (!empty($temp)) {
       $output = array_merge_recursive($output, $temp);
-    }*/
+    }
   }
 
   // Add in the default, if we did not get any results.

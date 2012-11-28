@@ -69,6 +69,7 @@ class Bookmark {
    */
   public function __construct($params = array()) {
     $this->user_id = $params['user_id'];
+    $this->user_list = $params['bookmark_users'];
     
     if (!empty($params['bookmark_session'])) {
       $this->bookmark_session = $params['bookmark_session'];
@@ -77,9 +78,7 @@ class Bookmark {
     if (!empty($params['bookmark_pids'])) {
       $this->pid_list = $params['bookmark_pids'];
     }
-    if (!empty($params['bookmark_users'])) {
-      $this->user_list = $params['bookmark_users'];
-    }
+    
     if (!empty($params['bookmark_name'])) {
       $this->bookmark_name = $params['bookmark_name'];
     }
