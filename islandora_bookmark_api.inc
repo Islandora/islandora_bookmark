@@ -23,7 +23,7 @@ function get_user_owned_bookmarks() {
   global $user;
   
   $listids = array();
-  $pidlist = array();
+  $bookmark_list = array();
     
   $list_query = db_query('SELECT listid FROM {islandora_bookmark_list_names} WHERE listowner = :uid ORDER BY listid', array(':uid' => $user->uid));
  
@@ -63,7 +63,7 @@ function get_user_owned_bookmarks() {
     );
     $templist = new Bookmark($params);
 
-    $pidlist[] = $templist;
+    $bookmark_list[] = $templist;
    }
          
    // User is anon, use session as well
@@ -72,24 +72,31 @@ function get_user_owned_bookmarks() {
        if (isset($pid)) {
          $templist = unserialize($value);
            if (in_array($pid, $templist->pid_list)) {
-             $pidlist[] = $templist;
+             $bookmark_list[] = $templist;
            }
        }
        else {
-          $pidlist[] = unserialize($value);
+          $bookmark_list[] = unserialize($value);
         }
      }
    }
-  return $pidlist;
+  return $bookmark_list;
 }
 
+/**
+ * Retrieves all Bookmarks the current user is shared on.
+ * 
+ * @global type $user
+ * @return array
+ *   An array of Bookmarks.
+ */
 function get_user_shared_bookmarks() {
   module_load_include('inc', 'islandora_bookmark', 'Bookmark');
   global $user;
   
   $owner_ids = array();
   $shared_ids = array();
-  $pidlist = array();
+  $bookmark_list = array();
   
     
   $owner_query = db_query('SELECT listid FROM {islandora_bookmark_list_names} WHERE listowner = :uid ORDER BY listid', array(':uid' => $user->uid));
@@ -134,13 +141,13 @@ function get_user_shared_bookmarks() {
       'bookmark_id' => $listid
     );
     $templist = new Bookmark($params);
-    $pidlist[] = $templist;
+    $bookmark_list[] = $templist;
    }
-   return $pidlist;
+   return $bookmark_list;
 }
 
 /**
- * Retrieves a list given a specified ID.
+ * Retrieves a Bookmark given a specified ID.
  * 
  * @global type $user
  * 
@@ -190,47 +197,15 @@ function get_bookmark_by_number($listid) {
   return $templist;
 }
 
-function get_pid_list_by_number($listid) {
-  module_load_include('inc', 'islandora_bookmark', 'Bookmark');
-  global $user;
-   
-  if (!preg_match('/session_/', $listid)) {
-    $listresult = db_query('SELECT listname, listowner from {islandora_bookmark_list_names} WHERE listid = :listid', array(':listid' => $listid))->fetchObject();
-        
-    $userresult = db_query('SELECT uid from {islandora_bookmark_list_users} WHERE listid = :listid', array(':listid' => $listid));
-    
-    $userlist = array();
-    
-    foreach ($userresult as $record) {
-      array_push($userlist, $record->uid);
-    }
-    
-    $pidresult = db_query('SELECT pidid from {islandora_bookmark_list_pids} WHERE listid = :listid', array(':listid' => $listid));
-    $pidlist = array();
-    
-    foreach ($pidresult as $record) {
-      array_push($pidlist, $record->pidid);
-    }
-        
-    $params = array(
-      'retrieve' => TRUE,
-      'user_id' => $user->uid,
-      'bookmark_owner' => $listresult->listowner,
-      'bookmark_name' => $listresult->listname,
-      'bookmark_id' => $listid,
-      'bookmark_users' => $userlist,
-      'bookmark_pids' => $pidlist,
-    );
-    $templist = new Bookmark($params);
-    
-  }
-  else {
-    $templist = unserialize($_SESSION['islandora_pid_list'][$listid]);
-  }
-  return $templist;
-}
-
-
+/**
+ * Retrieves all Bookmarks visible to the current user.
+ * 
+ * @param type $pid
+ * @param type $uid
+ * 
+ * @return array
+ *   An array containing listids.
+ */
 function get_bookmarks_visible_to_user($pid, $uid) {
   module_load_include('inc', 'islandora_bookmark', 'Bookmark');
   

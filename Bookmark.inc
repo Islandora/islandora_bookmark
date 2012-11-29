@@ -2,8 +2,8 @@
 
 /**
  * @file
+ * 
  * Definition of a Bookmark object.
- *  
  */
 
 /**
@@ -205,7 +205,7 @@ class Bookmark {
           }
       }
       else {
-        throw new Exception(t("Could not add the pid '" . $value ."' to '". $this->bookmark_name . "' as the pid doesn't exist!"));
+        throw new Exception(t("Could not add the pid '" . $value . "' to '" . $this->bookmark_name . "' as the pid doesn't exist!"));
       }
     }  
   }
@@ -379,8 +379,14 @@ class Bookmark {
     }
   }
   
+  /**
+   * Function to check whether the current user can execute management functions
+   * on the current Bookmark.
+   * 
+   * @return boolean
+   */
   public function management_access() {
-    if ($this->user_id === $this->bookmark_owner || user_access("Manage other users' pidlists")) {
+    if ($this->user_id === $this->bookmark_owner) {
       return TRUE;
     }
     else {
