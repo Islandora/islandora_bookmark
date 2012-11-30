@@ -270,7 +270,12 @@ class Bookmark {
     }
     else {
       // Add to session
-      $index = count($_SESSION['islandora_bookmark']);
+      if (isset($_SESSION['islandora_bookmark'])) {
+        $index = count($_SESSION['islandora_bookmark']);
+      }
+      else {
+        $index = 0;
+      }
       $this->bookmark_id = 'session_' . $index;
       $_SESSION['islandora_bookmark'][$this->bookmark_id] = serialize($this);
     }
