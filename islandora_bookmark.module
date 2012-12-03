@@ -1314,3 +1314,15 @@ function islandora_bookmark_update_name($form, $form_state) {
 }
 
 
+function islandora_bookmark_islandora_solr_primary_display() {
+  return array(
+      'bookmark' => array(
+      'name' => t('Islandora Bookmark'),
+      'module' => 'islandora_bookmark',
+      'file' => 'IslandoraSolrResultsBookmark.inc',
+      'class' => 'IslandoraSolrResultsBookmark',
+      'function' => 'displayResults',
+      'description' => t('Search results as Bookmark output'),
+    ),
+  );
+}
