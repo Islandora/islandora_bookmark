@@ -66,6 +66,7 @@ function islandora_bookmark_admin_settings_validate($form, &$form_state) {
  * @param type $form_state
  */
 function islandora_bookmark_admin_settings_submit($form, &$form_state) {
+  drupal_set_message(t('The settings have been updated!'));
   variable_set('islandora_bookmark_overview_page_elements', floor($form_state['values']['overview_page_elements']));
   variable_set('islandora_bookmark_detailed_page_elements', floor($form_state['values']['detailed_page_elements']));
 }
