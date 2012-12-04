@@ -292,6 +292,7 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
   global $user;
   module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
   module_load_include('inc', 'islandora', 'includes/utilities');
+  module_load_include('inc', 'islandora', 'includes/IslandoraTuque'); 
   drupal_add_css(drupal_get_path('module', 'islandora_bookmark') . '/css/islandora_bookmark.css');
   $bookmark = get_bookmark_by_number($list_id);
   
@@ -341,9 +342,17 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
   // Loop the pids and determine how to display the markup
   foreach ($pids as $pid) {
     $fedora_object = islandora_object_load($pid);
-    $rows[$pid] = array(
-      'markup' => islandora_bookmark_generate_markup($fedora_object),
-    );
+    if ($fedora_object) {
+      $rows[$pid] = array(
+        'markup' => islandora_bookmark_generate_markup($fedora_object),
+      );
+    }
+    else {
+      $rows[$pid] = array(
+        'markup' => '<div class="islandora_bookmark_error_message">'.t('Unable to load a Tuque object for !pid',
+            array('!pid' => $pid)).'</div>'
+      );
+    }
   }
   pager_default_initialize(count($all_pids), $num_eles);
   $form['bookmarks']['fieldset']['pager'] = array(
@@ -639,6 +648,7 @@ function islandora_bookmark_detailed_object_display($fedora_object) {
  */
 function islandora_bookmark_detailed_form_submit($form, &$form_state) {
   module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
+  module_load_include('inc', 'islandora', 'includes/IslandoraTuque'); 
   
   foreach ($_POST as $key => $value) {
     preg_match('/remove_pid_(.*)/', $key, $match);
@@ -685,20 +695,38 @@ function islandora_bookmark_detailed_form_submit($form, &$form_state) {
   // Export selected only
   elseif ($form_state['clicked_button']['#name'] === 'export_selected') {
     $pids = array();
+    $broke_pids = '';
+    $broke_count = 0;
     foreach ($form_state['values']['bookmarks']['fieldset']['table'] as $checkbox => $value) {
       if ($value !== 0) {
-        $pids[] = $value;
+        // Make sure we can actually access the object
+        if (islandora_object_load($value)) {
+          $pids[] = $value;
+        }
+        else {
+          $broke_pids .= $value . ' ';
+          $broke_count++;
+        }
       }
     }
+    
     $key = $form_state['values']['bookmarks']['fieldset']['export_options'];
     if (count($pids) > 0 && $key !== 'default') {
      call_user_func($form_state['islandora_bookmark_export'][$key], $pids);
     }
-    elseif (count($pids) === 0) {
+    elseif (count($pids) === 0 && $broke_count === 0) {
       drupal_set_message(t('Please select at least one pid!'), 'error'); 
     }
-    else {
+    elseif ($key === 'default') {
       drupal_set_message(t('Please select an option to export as!'), 'error'); 
+    }
+    else {
+      if ($broke_count > 0) {
+       $broken_pids = format_plural($broke_count, 'The following object !broke_pids was unable to be exported as it does not exist.',
+            'The following objects !broke_pids were unable to be exported as they do no exist.',
+            array('!broke_pids' => trim($broke_pids)));
+       drupal_set_message($broken_pids, 'error');
+      }
     }
   }
   elseif ($form_state['clicked_button']['#name'] === 'islandora_bookmark_remove_selected') {
@@ -751,13 +779,33 @@ function islandora_bookmark_detailed_form_submit($form, &$form_state) {
   else {
     $bookmark = $form_state['bookmark_object'];
     $pids = $bookmark->pid_list;
+    $all_pids = array();
+    $broke_pids = '';
+    $broke_count = 0;
     
+    foreach ($pids as $pid) {
+      if (islandora_object_load($pid)) {
+          $all_pids[] = $pid;
+        }
+        else {
+          $broke_pids .= $pid . ' ';
+          $broke_count++;
+        }
+    }
     $key = $form_state['values']['bookmarks']['fieldset']['export_options'];
-    if ($key !== 'default') {
-     call_user_func($form_state['islandora_bookmark_export'][$key], $pids);
+    if ($key !== 'default' && count($all_pids) > 0) {
+     call_user_func($form_state['islandora_bookmark_export'][$key], $all_pids);
+    }
+    elseif ($key === 'default') {
+      drupal_set_message(t('Please select an option to export as!'), 'error'); 
     }
     else {
-      drupal_set_message(t('Please select an option to export as!'), 'error'); 
+      if ($broke_count > 0) {
+       $broken_pids = format_plural($broke_count, 'The following object !broke_pids was unable to be exported as it does not exist.',
+            'The following objects !broke_pids were unable to be exported as they do no exist.',
+            array('!broke_pids' => trim($broke_pids)));
+       drupal_set_message($broken_pids, 'error');
+      }
     }
   }
 }
@@ -896,6 +944,7 @@ function islandora_bookmark_islandora_bookmark_export_handler() {
  * @param type $pids
  */
 function islandora_bookmark_export_pids_as_csv($pids) {
+  module_load_include('inc', 'islandora', 'includes/IslandoraTuque');
   // send response headers to the browser
   $csv_array = array();
   foreach ($pids as $key => $value) {
@@ -927,7 +976,7 @@ function islandora_bookmark_overview_form($form, &$form_state) {
   drupal_add_css(drupal_get_path('module', 'islandora_pid_list') . '/css/islandora_pid_list.css');
   module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
   module_load_include('inc', 'islandora_bookmark', 'Bookmark');
-  module_load_include('inc', 'fedora_repository', 'api/tuque');
+  
     
   $form = array(
     '#tree' => TRUE,

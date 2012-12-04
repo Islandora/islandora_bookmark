@@ -8,3 +8,5 @@ version = 7.x-dev
 core = 7.x
 files[] = Bookmark.inc
 files[] = islandora_bookmark_api.inc
+
+stylesheets[all][] = css/islandora_bookmark.css
