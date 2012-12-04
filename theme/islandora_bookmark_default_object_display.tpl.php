@@ -13,9 +13,20 @@
 ?>
 
 <?php 
-print l($fedora_object->label, 'islandora/object/' . $variables['fedora_object']->id, array(
-              'attributes' => array(
-                'target' => '_blank'
-                )));
+if ($fedora_object) {
+  if ($fedora_object->label) {
+    print l($fedora_object->label, 'islandora/object/' . $variables['fedora_object']->id, array(
+                  'attributes' => array(
+                    'target' => '_blank'
+                    )));
+  }
+  else {
+    print l($fedora_object->id, 'islandora/object/' . $variables['fedora_object']->id, array(
+                'attributes' => array(
+                  'target' => '_blank'
+                  )));
+  }
+}
+
 ?>
 

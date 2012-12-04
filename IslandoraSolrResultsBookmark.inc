@@ -28,7 +28,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
   function printResults($results) {
     // add islandora solr theme css
     drupal_add_css(drupal_get_path('module', 'islandora_solr_config') . '/css/islandora_solr_config.theme.css');
-        
+    
     if (empty($results)) {
       return t('no results');
     }
@@ -53,6 +53,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
 function islandora_bookmark_results_form($form, &$form_state, $docs, $query_processor) {
   module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
   module_load_include('inc', 'islandora_bookmark', 'Bookmark');
+  module_load_include('inc', 'islandora', 'includes/IslandoraTuque'); 
   
   $header = array(
     'markup' => '',
@@ -62,10 +63,18 @@ function islandora_bookmark_results_form($form, &$form_state, $docs, $query_proc
   $form_state['islandora_solr_query_processor'] = $query_processor;
   
   foreach ($docs as $doc) {
-    $temp_object = islandora_object_load($doc->PID);
-    $rows[$doc->PID] = array(
-      'markup' => islandora_bookmark_generate_markup($temp_object),
-    );
+    $fedora_object = islandora_object_load($doc->PID);
+    if ($fedora_object) {
+      $rows[$doc->PID] = array(
+        'markup' => islandora_bookmark_generate_markup($fedora_object),
+      );
+    }
+    else {
+      $rows[$doc->PID] = array(
+        'markup' => '<div class="islandora_bookmark_error_message">'.t('Unable to load a Tuque object for !pid',
+            array('!pid' => $doc->PID)).'</div>'
+      );
+    }
   }
    
   if (count($rows) > 0) {
@@ -170,20 +179,37 @@ function islandora_bookmark_results_form_submit($form, &$form_state) {
   
   if ($form_state['clicked_button']['#name'] === 'export_selected') {
     $pids = array();
+    $broke_pids = '';
+    $broke_count = 0;
+          
     foreach ($form_state['values']['islandora_bookmark_table'] as $checkbox => $value) {
       if ($value !== 0) {
-        $pids[] = $value;
+        if (islandora_object_load($value)) {
+          $pids[] = $value;
+        }
+        else {
+          $broke_pids .= $value . ' ';
+          $broke_count++;
+        }
       }
     }
     $key = $form_state['values']['export_options'];
-    if ($key !== 'default') {
+    if (count($pids) > 0 && $key !== 'default') {
      call_user_func($form_state['islandora_bookmark_export'][$key], $pids);
     }
-    elseif (count($pids) === 0) {
-      drupal_set_message(t('Please select at least one pid!'), 'error'); 
+    elseif (count($pids) === 0 && $broke_count === 0) {
+      drupal_set_message(t('Please select at least one valid pid!'), 'error'); 
+    }
+    elseif ($key === 'default') {
+      drupal_set_message(t('Please select an option to export as!'), 'error'); 
     }
     else {
-      drupal_set_message(t('Please select an option to export as!'), 'error'); 
+      if ($broke_count > 0) {
+       $broken_pids = format_plural($broke_count, 'The following object !broke_pids was unable to be exported as it does not exist.',
+            'The following objects !broke_pids were unable to be exported as they do not exist.',
+            array('!broke_pids' => trim($broke_pids)));
+       drupal_set_message($broken_pids, 'error');
+      }
     }
   }
   elseif ($form_state['clicked_button']['#name'] === 'export_all') {
@@ -191,24 +217,55 @@ function islandora_bookmark_results_form_submit($form, &$form_state) {
     $solr_results = $query_proc->solrResult;
     $docs = $solr_results->response->docs;
     $all_pids = array();
+    $broke_pids = '';
+    $broke_count = 0;
+    
     foreach ($docs as $doc) {
-      $all_pids[$doc->PID] = $doc->PID;
+      if (islandora_object_load($doc->PID)) {
+          $all_pids[$doc->PID] = $doc->PID;
+      }
+      else {
+        $broke_pids .= $doc->PID . ' ';
+        $broke_count++;
+      }
     }
     $key = $form_state['values']['export_options'];
     
-    if ($key !== 'default') {
+    if ($key !== 'default' && count($all_pids > 0)) {
      call_user_func($form_state['islandora_bookmark_export'][$key], $all_pids);
     }
-    else {
+    elseif ($key === 'default') {
       drupal_set_message(t('Please select an option to export as!'), 'error'); 
+    }
+    else {
+      if ($broke_count > 0) {
+       $broken_pids = format_plural($broke_count, 'The following object !broke_pids was unable to be exported as it does not exist.',
+            'The following objects !broke_pids were unable to be exported as they do not exist.',
+            array('!broke_pids' => trim($broke_pids)));
+       drupal_set_message($broken_pids, 'error');
+      }
     }
   }
   elseif ($form_state['clicked_button']['#name'] === 'save_selected') {
     $pids = array();
+    $broke_pids = '';
+    $broke_count = 0;
     foreach ($form_state['values']['islandora_bookmark_table'] as $checkbox => $value) {
       if ($value !== 0) {
-        $pids[] = $value;
+        if (islandora_object_load($value)) {
+          $pids[] = $value;
+        }
+        else {
+          $broke_pids .= $value . ' ';
+          $broke_count++;
+        }
       }
+    }
+    if ($broke_count > 0) {
+       $broken_pids = format_plural($broke_count, 'The following object !broke_pids was unable to be added as it does not exist.',
+            'The following objects !broke_pids were unable to be added as they do not exist.',
+            array('!broke_pids' => trim($broke_pids)));
+       drupal_set_message($broken_pids, 'error');
     }
     $key = $form_state['values']['save_options'];
     if ($key !== 'default') {
@@ -262,7 +319,7 @@ function islandora_bookmark_results_form_submit($form, &$form_state) {
       }
     }
     elseif (count($pids) === 0) {
-      drupal_set_message(t('Please select at least one pid!'), 'error'); 
+      drupal_set_message(t('Please select at least one valid pid!'), 'error'); 
     }
     else {
       drupal_set_message(t('Please select a Bookmark to save to!'), 'error'); 
@@ -272,9 +329,26 @@ function islandora_bookmark_results_form_submit($form, &$form_state) {
     $query_proc->executeQuery();
     $solr_results = $query_proc->solrResult;
     $docs = $solr_results->response->docs;
+    
     $all_pids = array();
+    $broke_pids = '';
+    $broke_count = 0;
+    
     foreach ($docs as $doc) {
-      $all_pids[$doc->PID] = $doc->PID;
+      if (islandora_object_load($doc->PID)) {
+          $all_pids[$doc->PID] = $doc->PID;
+      }
+      else {
+        $broke_pids .= $doc->PID . ' ';
+        $broke_count++;
+      }
+    }
+    
+    if ($broke_count > 0) {
+       $broken_pids = format_plural($broke_count, 'The following object !broke_pids was unable to be added as it does not exist.',
+            'The following objects !broke_pids were unable to be added as they do not exist.',
+            array('!broke_pids' => trim($broke_pids)));
+       drupal_set_message($broken_pids, 'error');
     }
     $key = $form_state['values']['save_options'];
     
