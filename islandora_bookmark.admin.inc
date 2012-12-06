@@ -34,26 +34,26 @@ function islandora_bookmark_admin_settings($form, &$form_state) {
       '#value' => t('Save configuration'),
     ),
   );
-  
+
   return $form;
 }
 
 /**
  * Function to validate the admin settings form
- * 
+ *
  * @param type $form
  * @param type $form_state
- * 
+ *
  */
 function islandora_bookmark_admin_settings_validate($form, &$form_state) {
   // Make sure our values are integers for the pager
   $overview_ele = $form_state['values']['overview_page_elements'];
   $detailed_ele = $form_state['values']['detailed_page_elements'];
-  
+
   if (!is_numeric($overview_ele)) {
     form_set_error('overview_page_elements', t('The value for the Overview Table must be an integer.'));
   }
-  
+
   if (!is_numeric($detailed_ele)) {
     form_set_error('detailed_page_elements', t('This value for the Detailed table must be an integer.'));
   }
@@ -61,7 +61,7 @@ function islandora_bookmark_admin_settings_validate($form, &$form_state) {
 
 /**
  * Function that sets the Drupal variables with user's input.
- * 
+ *
  * @param type $form
  * @param type $form_state
  */
