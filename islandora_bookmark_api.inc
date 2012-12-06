@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Houses helper functions used in the islandora_pid_list module
+ * Houses helper functions used in the islandora_bookmark module
  *
  */
 

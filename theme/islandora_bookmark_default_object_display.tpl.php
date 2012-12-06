@@ -12,21 +12,11 @@
  */
 ?>
 
-<?php 
-if ($fedora_object) {
-  if ($fedora_object->label) {
-    print l($fedora_object->label, 'islandora/object/' . $variables['fedora_object']->id, array(
-                  'attributes' => array(
-                    'target' => '_blank'
-                    )));
-  }
-  else {
-    print l($fedora_object->id, 'islandora/object/' . $variables['fedora_object']->id, array(
-                'attributes' => array(
-                  'target' => '_blank'
-                  )));
-  }
-}
-
-?>
+<?php if ($fedora_object): ?>
+  <?php if ($fedora_object->label): ?>
+    <?php print l($fedora_object->label, 'islandora/object/' . $variables['fedora_object']->id); ?>
+  <?php else: ?>
+    <?php print l($fedora_object->id, 'islandora/object/' . $variables['fedora_object']->id); ?>
+  <?php endif; ?>
+<?php endif; ?>
 

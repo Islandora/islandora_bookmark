@@ -2,24 +2,25 @@ div.islandora_bookmark_users div.form-item {
     width: 200px;
     display: inline-block;
     display: -moz-inline-block;
+    margin-right: 10px;
     *display:inline; 
     *zoom:1;
     *vertical-align: 2%;
 }
 
 div.islandora_bookmark_listname div.form-item {
-    width: 220px;
     display: inline-block;
     display: -moz-inline-block;
+    margin-right: 10px;
     *display:inline; 
     *zoom:1; 
     *vertical-align: 2%;
 }
 
 div.islandora_bookmark_adduser div.form-item {
-  width: 199px;
   display:inline-block;
   display: -moz-inline-block;
+  margin-right: 10px;
   *display:inline; 
   *zoom:1; 
   *vertical-align: 2%;
@@ -34,4 +35,15 @@ div.islandora_bookmark_error_message {
 .ui-tabs-hide {
   *display: none;
   *position: relative;
+}
+
+#islandora_bookmark .form-item-add-bookmarks
+{
+  display: inline-block;
+  margin-right: 10px;
+}
+
+#islandora-bookmark-detailed-form table .operations
+{
+  width: 100px;
 }
