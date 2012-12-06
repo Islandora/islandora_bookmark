@@ -59,7 +59,7 @@ function islandora_bookmark_user_login(&$edit, &$account) {
 function islandora_bookmark_menu() {
   module_load_include('inc', 'islandora_bookmark', 'Bookmark');
   $items['islandora_bookmark'] = array(
-    'title' => 'My Bookmarks',
+    'title' => 'My bookmarks',
     'description' => "Track and manage list of pids",
     'type' => MENU_NORMAL_ITEM,
     'page callback' => 'drupal_get_form',
@@ -67,14 +67,14 @@ function islandora_bookmark_menu() {
     'access arguments' => array('access content'),
   );
   $items['islandora_bookmark/lists'] = array(
-    'title' => 'Overview of Lists',
+    'title' => 'Overview of lists',
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'page callback' => 'drupal_get_form',
     'page arguments' => array('islandora_bookmark_overview_form'),
     'access arguments' => array('access content'),
   );
   $items['islandora_bookmark/listid/%'] = array(
-    'title' => 'Detailed List',
+    'title' => 'Detailed list',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('islandora_bookmark_detailed_form', 2),
     'access callback' => 'islandora_bookmark_access',
@@ -103,7 +103,7 @@ function islandora_bookmark_menu() {
     'access arguments' => array(2),
   );
   $items['admin/islandora/islandora_bookmark'] = array(
-      'title' => 'Islandora Bookmark',
+      'title' => 'Bookmark',
       'description' => 'Configure settings for the Bookmark module.',
       'page callback' => 'drupal_get_form',
       'page arguments' => array('islandora_bookmark_admin_settings'),
@@ -387,7 +387,7 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
     '#header' => $header,
     '#type' => 'tableselect',
     '#options' => $rows,
-    '#empty' => t('No pids currently associated.'),
+    '#empty' => t('Bookmark list is empty.'),
   );
 
   if (count($pids) != 0) {
@@ -421,14 +421,14 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
     // Load 'management' fieldset
     $form['bookmarks']['management'] = array(
       '#type' => 'fieldset',
-      '#title' => t('Management Functions'),
+      '#title' => t('Manage list'),
       '#weight' => 20,
       '#collapsed' => isset($form_state['islandora_bookmark_collapsed']) ? $form_state['islandora_bookmark_collapsed'] : TRUE,
       '#collapsible' => TRUE,
     );
     $form['bookmarks']['management']['listname'] = array(
       '#type' => 'textfield',
-      '#title' => t('List Name'),
+      '#title' => t('List name'),
       '#size' => 20,
       '#value' => $bookmark->bookmark_name,
       '#prefix' => '<div class="islandora_bookmark_listname">',
@@ -457,11 +457,12 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
 
     $form['bookmarks']['management']['remove'] = array(
       '#type' => 'submit',
-      '#value' => t('Delete this bookmark'),
+      '#value' => t('Delete this list'),
       '#submit' => array('islandora_bookmark_delete_bookmark'),
       '#weight' => 25,
     );
-
+    // @TODO: add button & functionality to clear a list.
+    
     $form['bookmarks']['management']['list-id'] = array(
       '#type' => 'value',
       '#value' => $bookmark->bookmark_id,
@@ -471,7 +472,7 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
       '#type' => 'fieldset',
       '#collapsible' => TRUE,
       '#collapsed' => FALSE,
-      '#title' => t('Users shared'),
+      '#title' => t('Share'),
       '#weight' => 20,
     );
 
@@ -481,7 +482,7 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
     if (count($bookmark->user_list) == 1) {
       $fku['empty'] = array(
         '#type' => 'item',
-        '#markup' => t('There are no users associated with this list'),
+        '#markup' => t('Bookmark list is not shared with other users.'),
         '#weight' => 20,
       );
     }
@@ -530,7 +531,7 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
       }
     }
 
-    $selectoptions = array("" => "- Select A User To Add - ");
+    $selectoptions = array("" => t("- Select user -"));
     // Get all users for use in select for forms
 
     $result = db_query("SELECT uid, name FROM {users} ORDER BY uid");
@@ -554,8 +555,8 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
     }
     $fku['listusers'] = array(
       '#type' => 'select',
-      '#default value' => t('Select a user to add'),
-      '#title' => t('Add a user to the list'),
+      '#default value' => t("- Select user -"),
+      '#title' => t('Share list with user'),
       '#options' => $selectoptions,
       '#width' => 20,
       '#weight' => 10000,
@@ -1007,7 +1008,7 @@ function islandora_bookmark_overview_form($form, &$form_state) {
   $form['owned_bookmarks'] = array(
     'fieldset' => array(
       '#type' => 'fieldset',
-      '#title' => t('My Bookmarks'),
+      '#title' => t('My bookmarks'),
       'pager' => array(
         '#markup' => theme('pager', array('element' => 0)),
         '#weight' => 5,
@@ -1032,7 +1033,7 @@ function islandora_bookmark_overview_form($form, &$form_state) {
   $form['shared_bookmarks'] = array(
     'fieldset' => array(
       '#type' => 'fieldset',
-      '#title' => t('Bookmarks Shared With Me'),
+      '#title' => t('Bookmarks shared with me'),
       'pager' => array(
         '#markup' => theme('pager', array('element' => 1)),
         '#weight' => 5,
@@ -1067,7 +1068,7 @@ function islandora_bookmark_form_overview_table(array $bookmark_objs) {
   }
 
   $headers = array(
-    'bookmark_name' => t('List Name'),
+    'bookmark_name' => t('List name'),
     'bookmark_owner' => t('Owner'),
   );
   $rows = array();
@@ -1108,7 +1109,7 @@ function islandora_bookmark_add_form($form_state) {
     '#tree' => TRUE,
     'listname' => array(
       '#type' => 'textfield',
-      '#title' => t('List Name'),
+      '#title' => t('List name'),
       '#size' => 20,
     ),
   );
@@ -1117,11 +1118,6 @@ function islandora_bookmark_add_form($form_state) {
     '#type' => 'submit',
     '#name' => 'islandora_bookmark_add_form_submit',
     '#value' => t('Submit'),
-  );
-  $form['clear'] = array(
-    '#type' => 'submit',
-    '#name' => 'islandora_bookmark_add_form_clear_button',
-    '#value' => t('Clear'),
   );
 
   return $form;
