@@ -19,4 +19,3 @@
     <?php print l($fedora_object->id, 'islandora/object/' . $variables['fedora_object']->id); ?>
   <?php endif; ?>
 <?php endif; ?>
-

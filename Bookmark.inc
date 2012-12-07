@@ -91,7 +91,7 @@ class Bookmark {
       $this->create_list();
     }
     else {
-    $this->bookmark_owner = $params['bookmark_owner'];
+      $this->bookmark_owner = $params['bookmark_owner'];
     }
   }
 
@@ -112,7 +112,7 @@ class Bookmark {
         }
       }
       else {
-        throw new Exception(t("You do not have access to remove pids from the list $this->bookmark_name"));
+        throw new Exception(t("You do not have access to remove bookmarks from the list $this->bookmark_name"));
       }
     }
     else {
@@ -194,7 +194,7 @@ class Bookmark {
                 $this->add_pid_db($value);
               }
               else {
-                throw new Exception(t("You do not have access to add pids to the list $this->bookmark_name"));
+                throw new Exception(t("You do not have access to add bookmarks to the list $this->bookmark_name"));
               }
             }
             else {
@@ -205,7 +205,7 @@ class Bookmark {
           }
       }
       else {
-        throw new Exception(t("Could not add the pid '" . $value . "' to '" . $this->bookmark_name . "' as the pid doesn't exist!"));
+        throw new Exception(t("Could not bookmark '" . $value . "' to '" . $this->bookmark_name . "' as the object doesn't exist."));
       }
     }
   }

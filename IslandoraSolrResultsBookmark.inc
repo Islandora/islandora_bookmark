@@ -30,10 +30,10 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
     drupal_add_css(drupal_get_path('module', 'islandora_solr_config') . '/css/islandora_solr_config.theme.css');
 
     if (empty($results)) {
-      return t('no results');
+      return t('No results');
     }
-
-    return drupal_render(drupal_get_form('islandora_bookmark_results_form', $results->response->docs, $this->islandoraSolrQueryProcessor));
+    $results_form = drupal_get_form('islandora_bookmark_results_form', $results->response->docs, $this->islandoraSolrQueryProcessor);
+    return drupal_render($results_form);
   }
 }
 
@@ -56,13 +56,14 @@ function islandora_bookmark_results_form($form, &$form_state, $docs, $query_proc
   module_load_include('inc', 'islandora', 'includes/IslandoraTuque');
 
   $header = array(
-    'markup' => '',
+    'markup' => t('Label'),
   );
   $rows = array();
 
   $form_state['islandora_solr_query_processor'] = $query_processor;
 
   foreach ($docs as $doc) {
+
     $fedora_object = islandora_object_load($doc->PID);
     if ($fedora_object) {
       $rows[$doc->PID] = array(
@@ -71,15 +72,15 @@ function islandora_bookmark_results_form($form, &$form_state, $docs, $query_proc
     }
     else {
       $rows[$doc->PID] = array(
-        'markup' => '<div class="islandora_bookmark_error_message">' . t('Unable to load a Tuque object for @pid',
-          array('@pid' => $doc->PID)) . '</div>'
+        'markup' => '<div class="islandora-bookmark-error-message">' . t('Unable to load object @pid.',
+          array('@pid' => $doc->PID)) . '</div>',
       );
     }
   }
 
   if (count($rows) > 0) {
     $export = islandora_bookmark_get_export_options();
-    $export_options['default'] = t('-- Select an option to export --');
+    $export_options['default'] = t('- Export type -');
 
     foreach ($export as $key => $value) {
       $export_options[$key] = $key;
@@ -89,7 +90,7 @@ function islandora_bookmark_results_form($form, &$form_state, $docs, $query_proc
     $form['islandora_bookmark_export_fieldset'] = array(
       'fieldset' => array(
         '#type' => 'fieldset',
-        '#title' => t('Export To File'),
+        '#title' => t('Export to file'),
         '#weight' => 0,
       ),
     );
@@ -111,11 +112,11 @@ function islandora_bookmark_results_form($form, &$form_state, $docs, $query_proc
       '#weight' => 5,
     );
 
-    $user_bookmarks = get_user_owned_bookmarks();
+    $user_bookmarks = islandora_bookmark_get_user_owned_bookmarks();
 
     if (count($user_bookmarks) > 0) {
       $save_options = array();
-      $save_options['default'] = t('-- Select a Bookmark to save to --');
+      $save_options['default'] = t('- Select bookmark list -');
 
       foreach ($user_bookmarks as $bookmark) {
         $save_options[$bookmark->bookmark_id] = $bookmark->bookmark_name;
@@ -124,7 +125,7 @@ function islandora_bookmark_results_form($form, &$form_state, $docs, $query_proc
       $form['islandora_bookmark_save_fieldset'] = array(
         'fieldset' => array(
           '#type' => 'fieldset',
-          '#title' => t('Save to Bookmark'),
+          '#title' => t('Bookmark'),
           '#weight' => 0,
         ),
       );
@@ -135,19 +136,19 @@ function islandora_bookmark_results_form($form, &$form_state, $docs, $query_proc
       );
       $form['islandora_bookmark_save_fieldset']['fieldset']['save_selected_submit'] = array(
         '#type' => 'submit',
-        '#value' => t('Save selected objects'),
+        '#value' => t('Bookmark selected objects'),
         '#name' => 'save_selected',
         '#weight' => 4,
       );
       $form['islandora_bookmark_save_fieldset']['fieldset']['save_all_submit'] = array(
         '#type' => 'submit',
-        '#value' => t('Save all results'),
+        '#value' => t('Bookmark all results'),
         '#name' => 'save_all',
         '#weight' => 5,
       );
       $form['islandora_bookmark_save_fieldset']['fieldset']['go_to_bookmark'] = array(
         '#type' => 'submit',
-        '#value' => t('Go to Bookmark'),
+        '#value' => t('View list'),
         '#name' => 'goto_bookmark',
         '#weight' => 6,
       );
@@ -157,6 +158,7 @@ function islandora_bookmark_results_form($form, &$form_state, $docs, $query_proc
       '#header' => $header,
       '#type' => 'tableselect',
       '#options' => $rows,
+      '#attributes' => array('class' => array('islandora-bookmark-solr-results')),
       '#empty' => t('No results found.'),
   );
   return $form;
@@ -198,10 +200,10 @@ function islandora_bookmark_results_form_submit($form, &$form_state) {
       call_user_func($form_state['islandora_bookmark_export'][$key], $pids);
     }
     elseif (count($pids) === 0 && $broke_count === 0) {
-      drupal_set_message(t('Please select at least one valid pid!'), 'error');
+      drupal_set_message(t('Please select at least one object.'), 'error');
     }
     elseif ($key === 'default') {
-      drupal_set_message(t('Please select an option to export as!'), 'error');
+      drupal_set_message(t('Please select an export type.'), 'error');
     }
     else {
       if ($broke_count > 0) {
@@ -262,8 +264,8 @@ function islandora_bookmark_results_form_submit($form, &$form_state) {
       }
     }
     if ($broke_count > 0) {
-      $broken_pids = format_plural($broke_count, 'The following object !broke_pids was unable to be added as it does not exist.',
-        'The following objects !broke_pids were unable to be added as they do not exist.',
+      $broken_pids = format_plural($broke_count, 'The following object !broke_pids was unable to be bookmarked as it does not exist.',
+        'The following objects !broke_pids were unable to be bookmarked as they do not exist.',
         array('!broke_pids' => trim($broke_pids)));
       drupal_set_message($broken_pids, 'error');
     }
@@ -271,7 +273,7 @@ function islandora_bookmark_results_form_submit($form, &$form_state) {
     if ($key !== 'default') {
       // Instantiate a Bookmark so we can do some comparisons before we add
       // the selected
-      $bookmark_object = get_bookmark_by_number($key);
+      $bookmark_object = islandora_bookmark_get_bookmark_by_number($key);
 
       $pids_to_add = array();
       $skipped_pids = '';
@@ -289,13 +291,13 @@ function islandora_bookmark_results_form_submit($form, &$form_state) {
       if (count($pids_to_add) > 0) {
         try {
           $bookmark_object->add_pids($pids_to_add);
-          $plural_add = format_plural(count($pids), 'selected pid has', 'selected pids have');
+          $plural_add = format_plural(count($pids), 'selected object has', 'selected objects have');
 
           $plural_skipped = '';
 
           if ($skipped_count > 0) {
-            $plural_skipped = format_plural($skipped_count, 'The selected pid (!skipped_pids) was not added as it already exists in the Bookmark!',
-              'The selected pids (!skipped_pids) were not added as they already exist in the Bookmark!',
+            $plural_skipped = format_plural($skipped_count, 'The selected object (!skipped_pids) was not added as it already exists in the bookmark list.',
+              'The selected objects (!skipped_pids) were not added as they already exist in the bookmark list.',
               array('@skipped_pids' => trim($skipped_pids)));
           }
           drupal_set_message(t('The @plural_add been added to @listname. @plural_skipped',
@@ -311,18 +313,18 @@ function islandora_bookmark_results_form_submit($form, &$form_state) {
         }
       }
       else {
-        $plural_skipped = format_plural($skipped_count, 'The selected pid (!skipped_pids) was not added as it already exists in !listname',
-            'The selected pids (!skipped_pids) were not added as they already exist in !listname',
+        $plural_skipped = format_plural($skipped_count, 'The selected object (<em>!skipped_pids</em>) was not added as it already exists in <em>!listname</em>.',
+            'The selected objects (<em>!skipped_pids</em>) were not added as they already exist in <em>!listname</em>.',
             array('!skipped_pids' => trim($skipped_pids), '!listname' => $bookmark_object->bookmark_name)
         );
         drupal_set_message($plural_skipped, 'warning');
       }
     }
     elseif (count($pids) === 0) {
-      drupal_set_message(t('Please select at least one valid pid!'), 'error');
+      drupal_set_message(t('Please select at least one object.'), 'error');
     }
     else {
-      drupal_set_message(t('Please select a Bookmark to save to!'), 'error');
+      drupal_set_message(t('Please select a bookmark list.'), 'error');
     }
   }
   elseif ($form_state['clicked_button']['#name'] === 'save_all') {
@@ -355,7 +357,7 @@ function islandora_bookmark_results_form_submit($form, &$form_state) {
     if ($key !== 'default') {
      // Instantiate a Bookmark so we can do some comparisons before we add
       // the selected
-      $bookmark_object = get_bookmark_by_number($key);
+      $bookmark_object = islandora_bookmark_get_bookmark_by_number($key);
 
       $pids_to_add = array();
       $skipped_pids = '';
@@ -377,8 +379,8 @@ function islandora_bookmark_results_form_submit($form, &$form_state) {
           $plural_skipped = '';
 
           if ($skipped_count > 0) {
-            $plural_skipped = format_plural($skipped_count, 'The pid (!skipped_pids) was not added as it already exists in the Bookmark!',
-                'The pids (!skipped_pids) were not added as they already exist in the Bookmark!',
+            $plural_skipped = format_plural($skipped_count, 'The object (!skipped_pids) was not added as it already exists in the bookmark list.',
+                'The objects (!skipped_pids) were not added as they already exist in the bookmark list.',
                 array('!skipped_pids' => trim($skipped_pids)));
           }
           drupal_set_message(t('The @plural_add been added to @listname. @plural_skipped',
@@ -394,7 +396,7 @@ function islandora_bookmark_results_form_submit($form, &$form_state) {
         }
       }
       else {
-        $plural_skipped = format_plural($skipped_count, 'The pid (!skipped_pids) was not added as it already exists in !listname',
+        $plural_skipped = format_plural($skipped_count, 'The pid (!skipped_pids) was not added as it already exists in !listname.',
           'The pids (!skipped_pids) were not added as they already exist in !listname',
           array('!skipped_pids' => trim($skipped_pids), '!listname' => $bookmark_object->bookmark_name)
         );
@@ -402,7 +404,7 @@ function islandora_bookmark_results_form_submit($form, &$form_state) {
       }
     }
     else {
-      drupal_set_message(t('Please select a Bookmark to save to!'), 'error');
+      drupal_set_message(t('Please select a bookmark list.'), 'error');
     }
   }
   else {
@@ -412,7 +414,7 @@ function islandora_bookmark_results_form_submit($form, &$form_state) {
       drupal_goto('islandora_bookmark/listid/' . $key);
     }
     else {
-      drupal_set_message(t('Please select a Bookmark to go to!'), 'error');
+      drupal_set_message(t('Please select a bookmark list.'), 'error');
     }
   }
 }

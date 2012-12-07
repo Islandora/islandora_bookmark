@@ -17,8 +17,7 @@
  * @return array
  *   An array of PidList objects.
  */
-
-function get_user_owned_bookmarks() {
+function islandora_bookmark_get_user_owned_bookmarks() {
   module_load_include('inc', 'islandora_bookmark', 'Bookmark');
   global $user;
 
@@ -90,7 +89,7 @@ function get_user_owned_bookmarks() {
  * @return array
  *   An array of Bookmarks.
  */
-function get_user_shared_bookmarks() {
+function islandora_bookmark_get_user_shared_bookmarks() {
   module_load_include('inc', 'islandora_bookmark', 'Bookmark');
   global $user;
 
@@ -157,7 +156,7 @@ function get_user_shared_bookmarks() {
  * @return PidList
  *   PidList object.
  */
-function get_bookmark_by_number($listid) {
+function islandora_bookmark_get_bookmark_by_number($listid) {
   module_load_include('inc', 'islandora_bookmark', 'Bookmark');
   global $user;
 
@@ -206,7 +205,7 @@ function get_bookmark_by_number($listid) {
  * @return array
  *   An array containing listids.
  */
-function get_bookmarks_visible_to_user($pid, $uid) {
+function islandora_bookmark_get_bookmarks_visible_to_user($pid, $uid) {
   module_load_include('inc', 'islandora_bookmark', 'Bookmark');
 
   $lists = array();
