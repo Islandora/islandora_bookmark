@@ -313,8 +313,8 @@ function islandora_bookmark_results_form_submit($form, &$form_state) {
         }
       }
       else {
-        $plural_skipped = format_plural($skipped_count, 'The selected object (<em>!skipped_pids</em>) was not added as it already exists in <em>!listname</em>.',
-            'The selected objects (<em>!skipped_pids</em>) were not added as they already exist in <em>!listname</em>.',
+        $plural_skipped = format_plural($skipped_count, 'The selected object (!skipped_pids) was not added as it already exists in !listname.',
+            'The selected objects (!skipped_pids) were not added as they already exist in !listname.',
             array('!skipped_pids' => trim($skipped_pids), '!listname' => $bookmark_object->bookmark_name)
         );
         drupal_set_message($plural_skipped, 'warning');
