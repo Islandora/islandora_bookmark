@@ -424,29 +424,20 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
   if ($bookmark->bookmark_owner === $user->uid) {
     $header['remove'] = array('data' => t('Operations'));
     foreach ($pids as $key => $pid) {
-
       $remove_button = array(
         '#type' => 'submit',
-        '#name' => 'remove_pid_' . $key,
-        '#id' => 'remove_pid_' . $key,
+        '#name' => 'remove_pid_' . $pid,
+        '#id' => 'remove_pid_' . $pid,
         '#button_type' => 'submit',
-//      '#submit' => array('islandora_bookmark_remove_bookmark_item'),
         '#pid' => $pid,
         '#value' => t('Remove'),
 
       );
-
-      $buttons[] = $remove_button;
-
       $rows[$pid]['remove'] = array(
         'data' => drupal_render($remove_button),
         'class' => 'operations'
       );
     }
-
-dsm($form['bookmarks']['fieldset']['table']);
-
-dsm($rows);
     if (count($pids) != 0) {
       $form['bookmarks']['fieldset']['remove_select'] = array(
         '#type' => 'submit',
@@ -464,7 +455,6 @@ dsm($rows);
       '#options' => $rows,
       '#empty' => t('Bookmark list is empty.'),
     );
-    $form['bookmarks']['fieldset']['table_buttons'] = $buttons;
   }
   else {
     $form['bookmarks']['fieldset']['table'] = array(
@@ -735,8 +725,7 @@ function islandora_bookmark_detailed_form_validate($form, &$form_state) {
 function islandora_bookmark_detailed_form_submit($form, &$form_state) {
   module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
   module_load_include('inc', 'islandora', 'includes/IslandoraTuque');
-dsm($_POST);
-dsm($form_state);
+
   foreach ($_POST as $key => $value) {
     preg_match('/remove_pid_(.*)/', $key, $match);
     if ($match) {
