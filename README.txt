@@ -18,9 +18,6 @@ REQUIREMENTS
  * Islandora
  * Islandora Solr (optional)
 
-INSTALLATION
-------------
-
 
 CONFIGURATION
 -------------
@@ -33,6 +30,10 @@ CONFIGURATION
 CUSTOMIZATION
 -------------
 
+Table cells referencing the bookmarked objects in both bookmark lists and bookmark Solr results can be modified.
+One way is by overriding the default template file located at theme/islandora-bookmark-object-display.tpl.php.
+Another way is to use hook_islandora_bookmark_object_markup() to let another module define the content and markup.
+
 
 TROUBLESHOOTING
 ---------------
@@ -43,8 +44,3 @@ Islandora Bookmark provides a Islandora Solr primary display which has to be ena
 (admin/islandora/search/islandora_solr). To set up Islandora Solr check the module's documentation. Islandora Solr comes
 with a 'Display switch' block which lets you switch primary displays. When enabled, the bookmark display can be accessed
 by appending ?display=bookmark to the Solr results URL.
-
-
-
-F.A.Q.
-------
