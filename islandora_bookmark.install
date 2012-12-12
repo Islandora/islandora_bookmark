@@ -1,9 +1,9 @@
 <?php
 
 /**
-* @file
-* Install and uninstall functions for the islandora_bookmark module.
-*/
+ * @file
+ * Install and uninstall functions for the islandora_bookmark module.
+ */
 
 function islandora_bookmark_schema() {
 
@@ -21,14 +21,14 @@ function islandora_bookmark_schema() {
         'type' => 'int',
         'length' => 11,
         'not null' => TRUE,
-      ), 
-     ),
-   );
+      ),
+    ),
+  );
 
   $schema['islandora_bookmark_list_pids'] = array(
     'description' => 'Stores pids and the lists they are associated to',
     'fields' => array(
-        'listid' => array(
+      'listid' => array(
         'description' => 'The ID of the list',
         'type' => 'int',
         'length' => 11,
@@ -42,11 +42,11 @@ function islandora_bookmark_schema() {
       ),
     ),
   );
-  
+
   $schema['islandora_bookmark_list_names'] = array(
     'description' => 'Stores lists and their associated names',
     'fields' => array(
-        'listid' => array(
+      'listid' => array(
         'description' => 'The ID of the list',
         'type' => 'serial',
         'length' => 11,

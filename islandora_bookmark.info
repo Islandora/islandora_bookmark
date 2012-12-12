@@ -1,9 +1,8 @@
-; $Id$
 name = Islandora Bookmark
 description = Allows users to build, manage and track lists of PIDs.
 dependencies[] = islandora
 package = Islandora Bookmark
-configure = admin/config/islandora_bookmark
+configure = admin/islandora/islandora_bookmark
 version = 7.x-dev
 core = 7.x
 files[] = Bookmark.inc
