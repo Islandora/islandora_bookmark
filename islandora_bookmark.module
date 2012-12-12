@@ -976,7 +976,7 @@ function islandora_bookmark_fedora_repository_object_form($form, &$form_state, $
     '#suffix' => '</div>',
   );
 
-  if (count($containing_lists) > 0) {
+  if (count($containing_lists)) {
     $links = array();
     foreach ($containing_lists as $key => $value) {
       $bookmark_object = islandora_bookmark_get_bookmark_by_number($value);
@@ -987,11 +987,6 @@ function islandora_bookmark_fedora_repository_object_form($form, &$form_state, $
       '#type' => 'item',
       '#prefix' => '<h3>' . t('Bookmarked in') . ':</h3>',
       '#markup' => theme('item_list', array('items' => $links)),
-    );
-  }
-  elseif (user_access('use islandora_bookmark')) {
-    $form['islandora_bookmark']['title'] = array(
-      '#markup' => '<h3>' . t('Bookmark') . ':</h3>'
     );
   }
 
@@ -1010,27 +1005,34 @@ function islandora_bookmark_fedora_repository_object_form($form, &$form_state, $
     }
   }
 
-  if (count($owned_lists) > 0) {
+  if (count($owned_lists)) {
     $temp_options = array_diff_key($owned_lists, $containing_lists);
-    if (count($temp_options) > 0) {
+    if (count($temp_options)) {
       $options['default'] = t('- Select bookmark list -');
       foreach ($temp_options as $key => $value) {
         $options[$key] = $value;
       }
-      $form['islandora_bookmark']['add_bookmarks'] = array(
-        '#type' => 'select',
-        '#options' => $options,
-      );
-      $form['islandora_bookmark']['add_button'] = array(
-        '#type' => 'submit',
-        '#value' => t('Add bookmark'),
-        '#ajax' => array(
-          'event' => 'click',
-          'callback' => 'islandora_bookmark_add_pid',
-          'wrapper' => 'islandora-bookmark',
-          'method' => 'replace',
-        ),
-      );
+      if (user_access('use islandora_bookmark')) {
+        if (!count($containing_lists)) {
+          $form['islandora_bookmark']['title'] = array(
+            '#markup' => '<h3>' . t('Bookmark') . ':</h3>'
+          );
+        }
+        $form['islandora_bookmark']['add_bookmarks'] = array(
+          '#type' => 'select',
+          '#options' => $options,
+        );
+        $form['islandora_bookmark']['add_button'] = array(
+          '#type' => 'submit',
+          '#value' => t('Add bookmark'),
+          '#ajax' => array(
+            'event' => 'click',
+            'callback' => 'islandora_bookmark_add_pid',
+            'wrapper' => 'islandora-bookmark',
+            'method' => 'replace',
+          ),
+        );
+      }
     }
   }
   $form_state['islandora_bookmark_pid'] = $pid;
@@ -1151,7 +1153,7 @@ function islandora_bookmark_overview_form($form, &$form_state) {
     else {
       $form['owned_bookmarks']['fieldset']['empty'] = array(
         '#type' => 'item',
-        '#markup' => t('You do not own any bookmarks.'),
+        '#markup' => t('You have no bookmarks.'),
       );
     }
   }
