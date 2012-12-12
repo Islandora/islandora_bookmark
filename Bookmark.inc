@@ -2,75 +2,75 @@
 
 /**
  * @file
- * 
+ *
  * Definition of a Bookmark object.
  */
 
 /**
- * Class that defines a Bookmark object. A Bookmark object needs only to be 
+ * Class that defines a Bookmark object. A Bookmark object needs only to be
  * constructed such that it contains a listname and listid for uniqueness.
- *   
+ *
  */
 class Bookmark {
   /**
    * The list of users who belong to this object.
-   * 
-   * @var array 
+   *
+   * @var array
    */
   public $user_list = array();
-  
+
   /**
    * The list of pids that belong to this object.
    *
    * @var array
    */
   public $pid_list = array();
-  
+
   /**
    * The name of the object.
-   * 
+   *
    * @var string
    */
   public $bookmark_name;
-  
+
   /**
    * The unique ID of the object. This is generated through the database or
    * explicity assigned when adding objects to the session.
-   * 
+   *
    * @var integer
    */
-  public $bookmark_id; 
-  
+  public $bookmark_id;
+
   /**
    * The owner of the object.
-   * 
+   *
    * @var integer
    */
   public $bookmark_owner;
-  
+
   /**
    * The user id of the current user accessing the object.
-   * 
-   * @var integer 
+   *
+   * @var integer
    */
   public $user_id;
-  
+
   /**
    * Whether the object is created or retrieved through the session.
-   * 
+   *
    * @var boolean
    */
   public $bookmark_session = FALSE;
-  
+
   /**
    * Constructor for the Bookmark object.
-   * 
-   * @param array $params 
+   *
+   * @param array $params
    */
   public function __construct($params = array()) {
     $this->user_id = $params['user_id'];
     $this->user_list = $params['bookmark_users'];
-    
+
     if (!empty($params['bookmark_session'])) {
       $this->bookmark_session = $params['bookmark_session'];
     }
@@ -78,7 +78,7 @@ class Bookmark {
     if (!empty($params['bookmark_pids'])) {
       $this->pid_list = $params['bookmark_pids'];
     }
-    
+
     if (!empty($params['bookmark_name'])) {
       $this->bookmark_name = $params['bookmark_name'];
     }
@@ -91,15 +91,15 @@ class Bookmark {
       $this->create_list();
     }
     else {
-    $this->bookmark_owner = $params['bookmark_owner'];
-    } 
-  }  
-  
+      $this->bookmark_owner = $params['bookmark_owner'];
+    }
+  }
+
   /**
-   * Removes the specified pids from the object and either 
+   * Removes the specified pids from the object and either
    * the database or session.
-   * 
-   * @param array $pids 
+   *
+   * @param array $pids
    *   An array of pids.
    */
   public function remove_pids($pids) {
@@ -112,9 +112,9 @@ class Bookmark {
         }
       }
       else {
-        throw new Exception(t("You do not have access to remove pids from the list $this->bookmark_name"));
+        throw new Exception(t("You do not have access to remove bookmarks from the list $this->bookmark_name"));
       }
-    } 
+    }
     else {
       $superserial = unserialize($_SESSION['islandora_bookmark'][$this->bookmark_id]);
 
@@ -126,14 +126,14 @@ class Bookmark {
       }
     }
   }
- 
+
   /**
    * Removes the specified users from the object and either the database
    * or session.
-   * 
+   *
    * @global type $user
-   * 
-   * @param array $users 
+   *
+   * @param array $users
    *   An array of users.
    */
   public function remove_users($users) {
@@ -142,7 +142,7 @@ class Bookmark {
     if (!$this->bookmark_session) {
       if ($this->management_access()) {
         if (in_array($this->bookmark_owner, $users)) {
-          $this->remove_list();  
+          $this->remove_list();
           return;
         }
         foreach ($users as $value) {
@@ -153,7 +153,7 @@ class Bookmark {
         $this->remove_user_db($this->user_id);
       }
       else {
-         throw new Exception(t("You do not have access to remove users from the list $this->bookmark_name"));
+        throw new Exception(t("You do not have access to remove users from the list $this->bookmark_name"));
       }
     }
     else {
@@ -161,7 +161,7 @@ class Bookmark {
 
       foreach ($superserial->user_list as $key => $value) {
         if (in_array($this->bookmark_owner, $users)) {
-          $this->remove_list();  
+          $this->remove_list();
           return;
         }
         if (in_array($value, $users)) {
@@ -171,15 +171,15 @@ class Bookmark {
       }
     }
   }
- 
+
   /**
    * Adds the specified pids to the object and either the database or session.
-   * 
+   *
    * @param array $pids
    *   An array of pids.
-   * 
-   * @throws Exception 
-   * 
+   *
+   * @throws Exception
+   *
    */
   public function add_pids($pids) {
     module_load_include('inc', 'fedora_repository', 'api/tuque');
@@ -194,26 +194,26 @@ class Bookmark {
                 $this->add_pid_db($value);
               }
               else {
-                throw new Exception(t("You do not have access to add pids to the list $this->bookmark_name"));
+                throw new Exception(t("You do not have access to add bookmarks to the list $this->bookmark_name"));
               }
             }
             else {
             $superserial = unserialize($_SESSION['islandora_bookmark'][$this->bookmark_id]);
-            $superserial->pid_list[] = $value;     
+            $superserial->pid_list[] = $value;
             $_SESSION['islandora_bookmark'][$this->bookmark_id] = serialize($superserial);
             }
           }
       }
       else {
-        throw new Exception(t("Could not add the pid '" . $value . "' to '" . $this->bookmark_name . "' as the pid doesn't exist!"));
+        throw new Exception(t("Could not bookmark '" . $value . "' to '" . $this->bookmark_name . "' as the object doesn't exist."));
       }
-    }  
+    }
   }
-  
+
   /**
    * Adds the specified users to the object and either the database or session.
-   * 
-   * @param type $users 
+   *
+   * @param type $users
    *   An array of users.
    */
   public function add_users($users) {
@@ -231,13 +231,13 @@ class Bookmark {
           }
           else {
             $superserial = unserialize($_SESSION['islandora_bookmark'][$this->bookmark_id]);
-            $superserial->user_list[] = $value;  
+            $superserial->user_list[] = $value;
             $_SESSION['islandora_bookmark'][$this->bookmark_id] = serialize($superserial);
         }
       }
     }
   }
-  
+
   /**
    * Inserts a record into the database or adds the object to the session.
    */
@@ -250,7 +250,7 @@ class Bookmark {
         'listowner' => $this->user_id,
       );
       $list_id = db_insert('islandora_bookmark_list_names')->fields($fields)->execute();
-      
+
       $this->bookmark_id = $list_id;
 
       foreach ($this->user_list as $key => $value) {
@@ -290,7 +290,7 @@ class Bookmark {
         db_delete('islandora_bookmark_list_names')
         ->condition('listid', $this->bookmark_id)
         ->execute();
-     
+
         foreach ($this->user_list as $key => $value) {
           db_delete('islandora_bookmark_list_users')
           ->condition('listid', $this->bookmark_id)
@@ -309,37 +309,37 @@ class Bookmark {
     }
     else {
       unset($_SESSION['islandora_bookmark'][$this->bookmark_id]);
-    } 
+    }
   }
-  
+
   /**
    * Removes the specified user from the object's entry in the database.
-   * 
-   * @param integer $userdelete 
+   *
+   * @param integer $userdelete
    *   The user to be removed.
    */
   private function remove_user_db($user_delete) {
     $and = db_and()->condition('uid', $user_delete)->condition('listid', $this->bookmark_id);
     db_delete('islandora_bookmark_list_users')->condition($and)->execute();
   }
-  
+
   /**
    * Adds the specified user to the object's entry in the database.
-   * 
+   *
    * @param integer $useradd
-   *   The user to be added. 
+   *   The user to be added.
    */
   private function add_user_db($user_add) {
     $fields = array(
       'uid' => $user_add,
-      'listid' => $this->bookmark_id,     
+      'listid' => $this->bookmark_id,
     );
     db_insert('islandora_bookmark_list_users')->fields($fields)->execute();
   }
-  
+
   /**
    * Removes the specified pid from the object's entry in the database.
-   * 
+   *
    * @param string $pid
    *   The pid to be removed.
    */
@@ -347,11 +347,11 @@ class Bookmark {
     $and = db_and()->condition('pidid', $pid)->condition('listid', $this->bookmark_id);
     db_delete('islandora_bookmark_list_pids')->condition($and)->execute();
   }
-  
+
   /**
    * Add the specified pid to the object's entry in the database.
-   * 
-   * @param string $pid 
+   *
+   * @param string $pid
    *   The user to be added.
    */
   private function add_pid_db($pid) {
@@ -361,13 +361,13 @@ class Bookmark {
     );
     db_insert('islandora_bookmark_list_pids')->fields($fields)->execute();
   }
- 
+
   /**
-   * Changes the name of the object in the session or updates the object's 
+   * Changes the name of the object in the session or updates the object's
    * entry in the database
-   * 
+   *
    * @param string $name
-   *   The new name of the object. 
+   *   The new name of the object.
    */
   public function change_list_name($name) {
     $this->bookmark_name = $name;
@@ -375,19 +375,19 @@ class Bookmark {
       db_update('islandora_bookmark_list_names')
         ->fields(array(
             'listname' => $name,
-          ))
+        ))
         ->condition('listid', $this->bookmark_id)
         ->execute();
     }
     else {
-       $_SESSION['islandora_bookmark'][$this->bookmark_id] = serialize($this);
+      $_SESSION['islandora_bookmark'][$this->bookmark_id] = serialize($this);
     }
   }
-  
+
   /**
    * Function to check whether the current user can execute management functions
    * on the current Bookmark.
-   * 
+   *
    * @return boolean
    */
   public function management_access() {
