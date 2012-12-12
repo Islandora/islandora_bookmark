@@ -6,63 +6,6 @@
  */
 
 /*
- * Implements hook_permission().
- */
-function islandora_bookmark_permission() {
-  return array(
-    'administer islandora_bookmark' => array(
-      'title' => t('Administer Islandora Bookmark'),
-      'description' => t('Perform administration tasks for Islandora Bookmark.'),
-    ),
-    'use islandora_bookmark' => array(
-      'title' => t('Use Islandora Bookmark'),
-      'description' => t('Create, manage and add new bookmarks to bookmark lists.'),
-    ),
-    'share islandora bookmarks' => array(
-      'title' => t('Share bookmarks'),
-      'description' => t('Share own bookmarks with other users.'),
-    ),
-  );
-}
-
-/**
- * Theme function for Islandora Bookmark.
- * @return array
- */
-function islandora_bookmark_theme() {
-  return array(
-    'islandora_bookmark_object_display' => array(
-     'template' => 'theme/islandora-bookmark-object-display',
-     'variables' => array('fedora_object' => NULL),
-    ),
-  );
-}
-
-/**
- * Implements hook_user_login().
- *
- * Checks to see if the user was anonymous and created Bookmark objects before
- * they logged in. Iterates through the session and adds these records to the
- * database.
- */
-function islandora_bookmark_user_login(&$edit, &$account) {
-  global $user;
-
-  if (!empty($_SESSION['islandora_bookmark'])) {
-      foreach ($_SESSION['islandora_bookmark'] as $key => $value) {
-      $bookmark_session = unserialize($value);
-      $anon_index = array_search(0, $bookmark_session->user_list, TRUE);
-      // Replace the anon who's logged in with their associated uid
-      $bookmark_session->user_id = $user->uid;
-      $bookmark_session->user_list[$anon_index] = $user->uid;
-      $bookmark_session->bookmark_session = FALSE;
-      $bookmark_session->create_list();
-      unset($_SESSION['islandora_bookmark'][$key]);
-    }
-  }
-}
-
-/*
  * Implements hook_menu().
  */
 function islandora_bookmark_menu() {
@@ -189,6 +132,97 @@ function islandora_bookmark_delete_bookmark_access($list_id) {
     }
   }
   return $bookmark_access;
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function islandora_bookmark_block_info() {
+  $blocks['islandora_bookmark'] = array(
+    'info' => t('Islandora Bookmark'), 
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function islandora_bookmark_block_view($delta = '') {
+  $block = array();
+
+  switch ($delta) {
+    case 'islandora_bookmark':
+      if (arg(0) == 'islandora' AND arg(1) == 'object') {
+        if (arg(2)) {
+          $pid = arg(2);
+        }
+        else {
+          $pid = variable_get('islandora_repository_pid', 'islandora:root');
+        }
+        $block['subject'] = t('Islandora Bookmark');
+        $block['content'] = islandora_bookmark_get_object_form($pid);
+      }
+      break;
+  }
+  return $block;
+}
+
+/*
+ * Implements hook_permission().
+ */
+function islandora_bookmark_permission() {
+  return array(
+    'administer islandora_bookmark' => array(
+      'title' => t('Administer Islandora Bookmark'),
+      'description' => t('Perform administration tasks for Islandora Bookmark.'),
+    ),
+    'use islandora_bookmark' => array(
+      'title' => t('Use Islandora Bookmark'),
+      'description' => t('Create, manage and add new bookmarks to bookmark lists.'),
+    ),
+    'share islandora bookmarks' => array(
+      'title' => t('Share bookmarks'),
+      'description' => t('Share own bookmarks with other users.'),
+    ),
+  );
+}
+
+/**
+ * Theme function for Islandora Bookmark.
+ * @return array
+ */
+function islandora_bookmark_theme() {
+  return array(
+    'islandora_bookmark_object_display' => array(
+     'template' => 'theme/islandora-bookmark-object-display',
+     'variables' => array('fedora_object' => NULL),
+    ),
+  );
+}
+
+/**
+ * Implements hook_user_login().
+ *
+ * Checks to see if the user was anonymous and created Bookmark objects before
+ * they logged in. Iterates through the session and adds these records to the
+ * database.
+ */
+function islandora_bookmark_user_login(&$edit, &$account) {
+  global $user;
+
+  if (!empty($_SESSION['islandora_bookmark'])) {
+      foreach ($_SESSION['islandora_bookmark'] as $key => $value) {
+      $bookmark_session = unserialize($value);
+      $anon_index = array_search(0, $bookmark_session->user_list, TRUE);
+      // Replace the anon who's logged in with their associated uid
+      $bookmark_session->user_id = $user->uid;
+      $bookmark_session->user_list[$anon_index] = $user->uid;
+      $bookmark_session->bookmark_session = FALSE;
+      $bookmark_session->create_list();
+      unset($_SESSION['islandora_bookmark'][$key]);
+    }
+  }
 }
 
 /*
@@ -904,16 +938,20 @@ function islandora_bookmark_detailed_form_submit($form, &$form_state) {
 }
 
 /**
- * Implements islandora_view_object_alter.
+ * Get form to render in the bookmark block.
  *
- * Renders a form that's appended to the bottom of each Fedora object's page.
- *
- * @param type $fedora_object
- * @param array $arr
+ * @param string $pid
+ *   PID to pass to the form. PID is gathered from url.
  */
-function islandora_bookmark_islandora_view_object_alter(&$fedora_object, &$arr) {
-  $object_form = drupal_get_form('islandora_bookmark_fedora_repository_object_form', $fedora_object->id);
-  $arr['islandora_bookmark'] = drupal_render($object_form);
+function islandora_bookmark_get_object_form($pid = NULL) {
+  $object_form = drupal_get_form('islandora_bookmark_fedora_repository_object_form', $pid);
+  if (isset($object_form['islandora_bookmark'])) {
+    $content = drupal_render($object_form);    
+  }
+  else {
+    $content = NULL;
+  }
+  return $content;
 }
 
 /**
@@ -945,14 +983,14 @@ function islandora_bookmark_fedora_repository_object_form($form, &$form_state, $
       $links[] = l($bookmark_object->bookmark_name, 'islandora_bookmark/listid/' . $bookmark_object->bookmark_id);
     }
 
-    $form['title'] = array(
+    $form['islandora_bookmark']['lists'] = array(
       '#type' => 'item',
       '#prefix' => '<h3>' . t('Bookmarked in') . ':</h3>',
       '#markup' => theme('item_list', array('items' => $links)),
     );
   }
   elseif (user_access('use islandora_bookmark')) {
-    $form['title'] = array(
+    $form['islandora_bookmark']['title'] = array(
       '#markup' => '<h3>' . t('Bookmark') . ':</h3>'
     );
   }
@@ -999,6 +1037,8 @@ function islandora_bookmark_fedora_repository_object_form($form, &$form_state, $
 
   return $form;
 }
+
+
 
 /**
  * Invokes the islandora_bookmark_export_handler() hook to be used in populating
