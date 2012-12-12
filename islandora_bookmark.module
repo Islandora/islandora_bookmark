@@ -588,7 +588,7 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
           $bookmark->remove_users(array($remove_user));
         }
       }
-    
+
       $fku = array();
       $rids = array_keys($user->roles);
       // Anonymous users can't share lists with other users.
