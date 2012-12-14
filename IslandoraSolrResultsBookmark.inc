@@ -411,7 +411,7 @@ function islandora_bookmark_results_form_submit($form, &$form_state) {
     $key = $form_state['values']['save_options'];
 
     if ($key !== 'default') {
-      drupal_goto('islandora_bookmark/listid/' . $key);
+      drupal_goto('islandora-bookmark/listid/' . $key);
     }
     else {
       drupal_set_message(t('Please select a bookmark list.'), 'error');

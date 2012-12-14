@@ -128,6 +128,30 @@ class Bookmark {
   }
 
   /**
+   * Remove all pids from the object and either
+   * the database or session.
+   *
+   */
+  public function remove_all_pids() {
+    if (!$this->bookmark_session) {
+      if ($this->management_access()) {
+        foreach ($this->pid_list as $value) {
+          $this->remove_pid_db($value);
+        }
+        $this->pid_list = array();
+      }
+      else {
+        throw new Exception(t("You do not have access to remove bookmarks from the list $this->bookmark_name"));
+      }
+    }
+    else {
+      $superserial = unserialize($_SESSION['islandora_bookmark'][$this->bookmark_id]);
+      $superserial->pid_list = array();
+      $_SESSION['islandora_bookmark'][$this->bookmark_id] = serialize($superserial);
+    }
+  }
+
+  /**
    * Removes the specified users from the object and either the database
    * or session.
    *
