@@ -269,7 +269,7 @@ function islandora_bookmark_delete_bookmark_confirm_submit($form, &$form_state) 
     )
   ));
   $bookmark_object->remove_list();
-  drupal_goto('islandora_bookmark');
+  drupal_goto('islandora-bookmark');
 }
 
 /*
@@ -319,7 +319,7 @@ function islandora_bookmark_remove_self_confirm_submit($form, &$form_state) {
     ));
 
   $bookmark_object->remove_users(array($user->uid));
-  drupal_goto('islandora_bookmark');
+  drupal_goto('islandora-bookmark');
 }
 
 /**
