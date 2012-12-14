@@ -732,7 +732,7 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
       '#title' => t('List name'),
       '#required' => TRUE,
       '#description' => t('A descriptive label for the bookmark list.'),
-      '#size' => 20,
+      '#size' => 30,
       '#default_value' => $bookmark->bookmark_name,
     );
 
@@ -1259,7 +1259,7 @@ function islandora_bookmark_add_form($form, $form_state) {
     '#required' => TRUE,
     '#description' => t('A descriptive label for the bookmark list.'),
     '#type' => 'textfield',
-    '#size' => 20,
+    '#size' => 30,
   );
 
   $form['submit'] = array(
