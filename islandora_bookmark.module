@@ -28,8 +28,8 @@ function islandora_bookmark_menu() {
   );
   $items['islandora-bookmark/listid/%'] = array(
     'title' => 'Detailed list',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('islandora_bookmark_detailed_form', 2),
+    'page callback' => 'islandora_bookmark_detailed_forms',
+    'page arguments' => array(2),
     'access callback' => 'islandora_bookmark_access',
     'access arguments' => array(2),
   );
@@ -382,7 +382,24 @@ function islandora_bookmark_object_display($fedora_object) {
 }
 
 /**
- * Creates the detailed Bookmark form.
+ * Callback function for the detailed list view. Returns forms for display and management.
+ *
+ * @param string $list_id
+ *   Id of the bookmark list to be rendered.
+ * @return string
+ *   Rendered forms to display and manage the bookmark list.
+ */
+function islandora_bookmark_detailed_forms($list_id) {
+  $output = '';
+  $detailed_form = drupal_get_form('islandora_bookmark_detailed_form', $list_id);
+  $output .= drupal_render($detailed_form);
+  $detailed_form_manage = drupal_get_form('islandora_bookmark_detailed_form_manage', $list_id);
+  $output .= drupal_render($detailed_form_manage);
+  return $output;
+}
+
+/**
+ * Creates the detailed Bookmark form. Shows bookmarks, remove buttons, export and share functionality.
  *
  * @global type $user
  * @param type $form
@@ -402,16 +419,6 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
   $form = array(
     '#tree' => TRUE,
     '#prefix' => '<div id="islandora-bookmark-detailed-overview">',
-    '#suffix' => '</div>',
-  );
-
-  // Necessary evil so our textfield so that our textfield does not
-  // remove elements from our table.
-  $form['hidden_submit'] = array(
-    '#type' => 'submit',
-    '#name' => 'islandora_bookmark_hidden_submit',
-    '#submit' => array('islandora_bookmark_update_bookmark'),
-    '#prefix' => '<div class="islandora-bookmark-hidden-submit">',
     '#suffix' => '</div>',
   );
 
@@ -553,10 +560,9 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
     );
   }
 
-  // Share and manage
+  // Share
   if ($bookmark->bookmark_owner === $user->uid) {
 
-    // Share
     if (user_access('share islandora bookmarks')) {
       // Triggered element (Add item or remove)
       if (isset($form_state['triggering_element'])) {
@@ -720,38 +726,6 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
         $form['bookmarks']['users'] += $fku;
       }
     }
-    // Management
-    $form['bookmarks']['management'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('Manage'),
-      '#collapsed' => isset($form_state['islandora_bookmark_collapsed']) ? $form_state['islandora_bookmark_collapsed'] : TRUE,
-      '#collapsible' => TRUE,
-    );
-    $form['bookmarks']['management']['listname'] = array(
-      '#type' => 'textfield',
-      '#title' => t('List name'),
-      '#required' => TRUE,
-      '#description' => t('A descriptive label for the bookmark list.'),
-      '#size' => 30,
-      '#default_value' => $bookmark->bookmark_name,
-    );
-
-    $form['bookmarks']['management']['update'] = array(
-      '#type' => 'submit',
-      '#value' => t('Save'),
-      '#submit' => array('islandora_bookmark_update_bookmark'),
-    );
-
-    $form['bookmarks']['management']['remove'] = array(
-      '#type' => 'submit',
-      '#value' => t('Delete list'),
-      '#submit' => array('islandora_bookmark_delete_bookmark'),
-    );
-
-    $form['bookmarks']['management']['list-id'] = array(
-      '#type' => 'value',
-      '#value' => $bookmark->bookmark_id,
-    );
   }
   else {
     if ($user->uid != 0) {
@@ -762,7 +736,6 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
       );
     }
   }
-
   $form_state['bookmark_object'] = $bookmark;
 
   return $form;
@@ -777,6 +750,7 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
  * @param type $form_state
  */
 function islandora_bookmark_detailed_form_submit($form, &$form_state) {
+
   module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
   module_load_include('inc', 'islandora', 'includes/IslandoraTuque');
 
@@ -950,6 +924,65 @@ function islandora_bookmark_detailed_form_submit($form, &$form_state) {
       }
     }
   }
+}
+
+/**
+ * Manage form for detailed bookmark list. 
+ *
+ * @param array $form
+ * @param array $form_state
+ * @param string $list_id
+ *   Id of the bookmark list manage form to be rendered.
+ */
+function islandora_bookmark_detailed_form_manage($form, &$form_state, $list_id) {
+  global $user;
+  module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
+  module_load_include('inc', 'islandora_bookmark', 'Bookmark');
+  module_load_include('inc', 'islandora', 'includes/utilities');
+  module_load_include('inc', 'islandora', 'includes/IslandoraTuque');
+  drupal_add_css(drupal_get_path('module', 'islandora_bookmark') . '/css/islandora_bookmark.css');
+  $bookmark = islandora_bookmark_get_bookmark_by_number($list_id);
+
+  $form = array(
+    '#tree' => TRUE
+  );
+  // Manage
+  if ($bookmark->bookmark_owner === $user->uid) {
+    // Management
+    $form['bookmarks']['management'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Manage'),
+      '#collapsed' => isset($form_state['islandora_bookmark_collapsed']) ? $form_state['islandora_bookmark_collapsed'] : TRUE,
+      '#collapsible' => TRUE,
+    );
+    $form['bookmarks']['management']['listname'] = array(
+      '#type' => 'textfield',
+      '#title' => t('List name'),
+      '#required' => TRUE,
+      '#description' => t('A descriptive label for the bookmark list.'),
+      '#size' => 30,
+      '#default_value' => $bookmark->bookmark_name,
+    );
+
+    $form['bookmarks']['management']['update'] = array(
+      '#type' => 'submit',
+      '#value' => t('Save'),
+      '#submit' => array('islandora_bookmark_update_bookmark'),
+    );
+
+    $form['bookmarks']['management']['remove'] = array(
+      '#type' => 'submit',
+      '#value' => t('Delete list'),
+      '#submit' => array('islandora_bookmark_delete_bookmark'),
+    );
+
+    $form['bookmarks']['management']['list-id'] = array(
+      '#type' => 'value',
+      '#value' => $bookmark->bookmark_id,
+    );
+  }
+  $form_state['bookmark_object'] = $bookmark;
+  return $form;
 }
 
 /**
