@@ -1,6 +1,6 @@
 <?php
 
-/*
+/**
  * @file
  * Contains methods to search solr and display results. Depends on
  * Apache_Solr_Php client.
@@ -11,7 +11,7 @@
  */
 class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
 
-  function IslandoraSolrResultsBookmark() {
+  function __construct() {
     parent::__construct();
   }
 
@@ -32,7 +32,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
     if (empty($results)) {
       return t('No results');
     }
-    $results_form = drupal_get_form('islandora_bookmark_results_form', $results->response->docs, $this->islandoraSolrQueryProcessor);
+    $results_form = drupal_get_form('islandora_bookmark_results_form', $results['response']['objects'], $this->islandoraSolrQueryProcessor);
     return drupal_render($results_form);
   }
 }
@@ -43,14 +43,15 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
  *
  * @param type $form
  * @param type $form_state
- * @param type $docs
- *   The Solr docs created in the printResults function.
+ * @param type $object_results
+ *   The object results from the Islandora Solr processor created in the
+ *   printResults function.
  * @param type $query_processor
  *   The Islandora Solr Query Processor used to modify the existing query
  *   to retrieve all results.
  * @return type
  */
-function islandora_bookmark_results_form($form, &$form_state, $docs, $query_processor) {
+function islandora_bookmark_results_form($form, &$form_state, $object_results, $query_processor) {
   module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
   module_load_include('inc', 'islandora_bookmark', 'Bookmark');
   module_load_include('inc', 'islandora', 'includes/IslandoraTuque');
@@ -62,18 +63,18 @@ function islandora_bookmark_results_form($form, &$form_state, $docs, $query_proc
 
   $form_state['islandora_solr_query_processor'] = $query_processor;
 
-  foreach ($docs as $doc) {
-
-    $fedora_object = islandora_object_load($doc->PID);
+  foreach ($object_results as $object_result) {
+    $doc = $object_result['solr_doc'];
+    $fedora_object = islandora_object_load($doc['PID']);
     if ($fedora_object) {
-      $rows[$doc->PID] = array(
+      $rows[$doc['PID']] = array(
         'markup' => islandora_bookmark_generate_markup($fedora_object),
       );
     }
     else {
-      $rows[$doc->PID] = array(
+      $rows[$doc['PID']] = array(
         'markup' => '<div class="islandora-bookmark-error-message">' . t('Unable to load object @pid.',
-          array('@pid' => $doc->PID)) . '</div>',
+          array('@pid' => $doc['PID'])) . '</div>',
       );
     }
   }
@@ -216,18 +217,19 @@ function islandora_bookmark_results_form_submit($form, &$form_state) {
   }
   elseif ($form_state['clicked_button']['#name'] === 'export_all') {
     $query_proc->executeQuery();
-    $solr_results = $query_proc->solrResult;
-    $docs = $solr_results->response->docs;
+    $solr_results = $query_proc->islandoraSolrResult;
+    $object_results = $solr_results['response']['docs'];
     $all_pids = array();
     $broke_pids = '';
     $broke_count = 0;
 
-    foreach ($docs as $doc) {
-      if (islandora_object_load($doc->PID)) {
-          $all_pids[$doc->PID] = $doc->PID;
+    foreach ($object_results as $object_result) {
+      $doc = $object_result['solr_doc'];
+      if (islandora_object_load($doc['PID'])) {
+          $all_pids[$doc['PID']] = $doc['PID'];
       }
       else {
-        $broke_pids .= $doc->PID . ' ';
+        $broke_pids .= $doc['PID'] . ' ';
         $broke_count++;
       }
     }
@@ -329,19 +331,20 @@ function islandora_bookmark_results_form_submit($form, &$form_state) {
   }
   elseif ($form_state['clicked_button']['#name'] === 'save_all') {
     $query_proc->executeQuery();
-    $solr_results = $query_proc->solrResult;
-    $docs = $solr_results->response->docs;
+    $solr_results = $query_proc->islandoraSolrResult;
+    $object_results = $solr_results['response']['docs'];
 
     $all_pids = array();
     $broke_pids = '';
     $broke_count = 0;
 
-    foreach ($docs as $doc) {
-      if (islandora_object_load($doc->PID)) {
-          $all_pids[$doc->PID] = $doc->PID;
+    foreach ($object_results as $object_result) {
+      $doc = $object_result['solr_doc'];
+      if (islandora_object_load($doc['PID'])) {
+          $all_pids[$doc['PID']] = $doc['PID'];
       }
       else {
-        $broke_pids .= $doc->PID . ' ';
+        $broke_pids .= $doc['PID'] . ' ';
         $broke_count++;
       }
     }
