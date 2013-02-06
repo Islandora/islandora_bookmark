@@ -2,12 +2,13 @@
 
 /**
  * @file
+ *   This is a template for generating the default markup for a Fedora object
+ *   in conjunction with Islandora Bookmark.
  *
- * This is a template for generating the default markup for a Fedora object
- * in conjunction with Islandora Bookmark.
+ * The 'variables' array contains an array with information necessary for
+ * creating an anchor tag
  *
- * The 'variables' array contains a Fedora Tuque object see
- * islandora-object.tpl.php of the core Islandora module for further details.
+ * @see: islandora_bookmark_object_display
  *
  */
 ?>
