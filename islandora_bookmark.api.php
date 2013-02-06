@@ -22,6 +22,17 @@ function hook_islandora_bookmark_export_handler() {
  * @return
  *   Returns an array containing the markup for displaying the Fedora object.
  */
-function hook_islandora_bookmark_object_markup() {
+function hook_islandora_bookmark_object_markup($fedora_object, $object_url_info) {
+
+}
+
+/**
+ * Hook to generate markup for displaying a Fedora object within a table.
+ * Content model specific.
+ *
+ * @return array
+ *   Returns an array containing the markup for displaying the Fedora object.
+ */
+function hook_CMODEL_PID_islandora_bookmark_object_markup($fedora_object, $object_url_info) {
 
 }
