@@ -393,12 +393,11 @@ function islandora_bookmark_generate_markup($pid, $object_url_info = NULL) {
  *
  * @param array $object_url_info
  *   Contains information to build an anchor tag ie.
- *
- *     $object_url_info = array(
+ *     array(
  *       'path' => "islandora/$pid",
  *       'params' => array(),
  *       'markup' => 'a label',
- *       );
+ *     );
  *
  * @return array
  *   an associative array containing the output from theme
