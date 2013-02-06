@@ -62,21 +62,17 @@ function islandora_bookmark_results_form($form, &$form_state, $object_results, $
   $rows = array();
 
   $form_state['islandora_solr_query_processor'] = $query_processor;
-
+  $label_field = variable_get('islandora_solr_object_label_field', 'fgs_label_s');
   foreach ($object_results as $object_result) {
     $doc = $object_result['solr_doc'];
-    $fedora_object = islandora_object_load($doc['PID']);
-    if ($fedora_object) {
-      $rows[$doc['PID']] = array(
-        'markup' => islandora_bookmark_generate_markup($fedora_object),
+    $object_url_info = array(
+      'path' => $object_result['object_url'],
+      'params' => $object_result['object_url_params'],
+      'markup' => $doc[$label_field],
       );
-    }
-    else {
-      $rows[$doc['PID']] = array(
-        'markup' => '<div class="islandora-bookmark-error-message">' . t('Unable to load object @pid.',
-          array('@pid' => $doc['PID'])) . '</div>',
-      );
-    }
+    $rows[$doc['PID']] = array(
+      'markup' => islandora_bookmark_generate_markup($doc['PID'], $object_url_info),
+    );
   }
 
   if (count($rows) > 0) {
