@@ -1,6 +1,6 @@
 <?php
 
-/*
+/**
  * @file
  * Contains methods to search solr and display results. Depends on
  * Apache_Solr_Php client.
@@ -10,7 +10,9 @@
  * Extention of IslandoraSolrResults to create an alternative display type.
  */
 class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
-
+  /**
+   * Constructor.
+   */
   function IslandoraSolrResultsBookmark() {
     parent::__construct();
   }
@@ -23,7 +25,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
    * @return
    *   Rendered Solr results
    *
-   * @see IslandoraSolrResults::displayResults()
+   * @see displayResults()
    */
   function printResults($results) {
     // add islandora solr theme css
@@ -51,9 +53,25 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
  * @return type
  */
 function islandora_bookmark_results_form($form, &$form_state, $docs, $query_processor) {
+  if (module_exists('islandora_scholar')) {
+    module_load_include('inc', 'citation_exporter', 'CitationExporter');
+    if (CitationExporter::ReadyToExport()) {
+    //XXX: refresh dealio may break stuff...
+      $citation_export_head = array(
+        '#type' => 'html_tag',
+        '#tag' => 'meta',
+        '#attributes' => array(
+          'http-equiv' => 'refresh',
+          'content' => '1.0;' . url(MENU_CITATION_EXPORTER_EXPORT, array('absolute' => TRUE)),
+        )
+      );
+      drupal_add_html_head($citation_export_head, 'citation_exporter_head');
+    }
+  }
   module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
   module_load_include('inc', 'islandora_bookmark', 'Bookmark');
-  module_load_include('inc', 'islandora', 'includes/IslandoraTuque');
+
+  form_load_include($form_state, 'inc', 'islandora_bookmark', 'IslandoraSolrResultsBookmark');
 
   $header = array(
     'markup' => t('Label'),
@@ -77,14 +95,16 @@ function islandora_bookmark_results_form($form, &$form_state, $docs, $query_proc
       );
     }
   }
-
   if (count($rows) > 0) {
     $export = islandora_bookmark_get_export_options();
     $export_options['default'] = t('- Export type -');
-
-    foreach ($export as $key => $value) {
-      $export_options[$key] = $key;
-      $form_state['islandora_bookmark_export'][$key] = $value;
+    $export_styles = array();
+    foreach ($export as $module_name => $export_array) {
+      foreach ($export_array as $name => $export_func) {
+        $export_options[$module_name][$name] = $name;
+        $form_state['islandora_bookmark_export'][$name] = $export_func;
+        $export_styles[$name] = islandora_bookmark_get_export_format_options($name);
+      }
     }
 
     $form['islandora_bookmark_export_fieldset'] = array(
@@ -94,16 +114,40 @@ function islandora_bookmark_results_form($form, &$form_state, $docs, $query_proc
         '#weight' => 0,
       ),
     );
+
+    $form['islandora_bookmark_export_fieldset']['fieldset']['export_styles'] = array(
+        '#weight' => 4
+    );
+    foreach ($export_styles as $key => $value) {
+      if (count($export_styles[$key])) {
+        $form['islandora_bookmark_export_fieldset']['fieldset']['export_styles'][$key] = array(
+          '#type' => 'select',
+          '#title' => t('Style'),
+          '#options' => $export_styles[$key],
+          '#weight' => 4,
+          '#name' => 'islandora_bookmark_export_styles',
+          '#states' => array(
+            'visible' => array(
+              ':input[name="islandora_bookmark_export_options_select"]' => array('value' => $key)
+            )
+          )
+        );
+      }
+    }
+
     $form['islandora_bookmark_export_fieldset']['fieldset']['export_options'] = array(
       '#type' => 'select',
       '#options' => $export_options,
       '#weight' => 3,
+      '#title' => t('Format'),
+      '#name' => 'islandora_bookmark_export_options_select',
     );
+
     $form['islandora_bookmark_export_fieldset']['fieldset']['export_selected_submit'] = array(
       '#type' => 'submit',
       '#value' => t('Export selected objects'),
       '#name' => 'export_selected',
-      '#weight' => 4,
+      '#weight' => 5,
     );
     $form['islandora_bookmark_export_fieldset']['fieldset']['export_all_submit'] = array(
       '#type' => 'submit',
@@ -111,7 +155,6 @@ function islandora_bookmark_results_form($form, &$form_state, $docs, $query_proc
       '#name' => 'export_all',
       '#weight' => 5,
     );
-
     $user_bookmarks = islandora_bookmark_get_user_owned_bookmarks();
 
     if (count($user_bookmarks) > 0) {
@@ -154,6 +197,7 @@ function islandora_bookmark_results_form($form, &$form_state, $docs, $query_proc
       );
     }
   }
+
   $form['islandora_bookmark_table'] = array(
       '#header' => $header,
       '#type' => 'tableselect',
@@ -171,6 +215,9 @@ function islandora_bookmark_results_form($form, &$form_state, $docs, $query_proc
  * @param type $form_state
  */
 function islandora_bookmark_results_form_submit($form, &$form_state) {
+  $queries = $_GET;
+  unset($queries['q']);
+  $form_state['redirect'] = array(request_path(), array('query' => $queries));
   module_load_include('inc', 'islandora_bookmark', 'islandora_bookmark_api');
   module_load_include('inc', 'islandora_bookmark', 'Bookmark');
 
@@ -195,9 +242,14 @@ function islandora_bookmark_results_form_submit($form, &$form_state) {
         }
       }
     }
-    $key = $form_state['values']['export_options'];
+    $key = $form_state['input']['islandora_bookmark_export_options_select'];
     if (count($pids) > 0 && $key !== 'default') {
-      call_user_func($form_state['islandora_bookmark_export'][$key], $pids);
+      if (array_key_exists('islandora_bookmark_export_styles_' . $key, $form_state['input'])) {
+        call_user_func($form_state['islandora_bookmark_export'][$key], $pids, $form_state['input']['islandora_bookmark_export_styles']);
+      }
+      else {
+        call_user_func($form_state['islandora_bookmark_export'][$key], $pids);
+      }
     }
     elseif (count($pids) === 0 && $broke_count === 0) {
       drupal_set_message(t('Please select at least one object.'), 'error');
@@ -231,10 +283,15 @@ function islandora_bookmark_results_form_submit($form, &$form_state) {
         $broke_count++;
       }
     }
-    $key = $form_state['values']['export_options'];
+    $key = $form_state['input']['islandora_bookmark_export_options_select'];
 
     if ($key !== 'default' && count($all_pids > 0)) {
-      call_user_func($form_state['islandora_bookmark_export'][$key], $all_pids);
+      if (array_key_exists('islandora_bookmark_export_styles_' . $key, $form_state['input'])) {
+        call_user_func($form_state['islandora_bookmark_export'][$key], $all_pids, $form_state['input']['islandora_bookmark_export_styles']);
+      }
+      else {
+        call_user_func($form_state['islandora_bookmark_export'][$key], $all_pids);
+      }
     }
     elseif ($key === 'default') {
       drupal_set_message(t('Please select an option to export as!'), 'error');

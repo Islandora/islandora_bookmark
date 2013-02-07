@@ -25,3 +25,11 @@ function hook_islandora_bookmark_export_handler() {
 function hook_islandora_bookmark_object_markup() {
 
 }
+
+/**
+ * Hook to collect additional style options used in exporting. 
+ *
+ */
+function islandora_bookmark_export_styles($option) {
+
+}
