@@ -198,7 +198,7 @@ function islandora_bookmark_theme() {
   return array(
     'islandora_bookmark_object_display' => array(
      'template' => 'theme/islandora-bookmark-object-display',
-     'variables' => array('fedora_object' => NULL),
+     'variables' => array('object_url_info' => NULL),
     ),
   );
 }
@@ -337,52 +337,81 @@ function islandora_bookmark_update_bookmark($form, &$form_state) {
 }
 
 /**
- *
  * Function that invokes the islandora_bookmark_object_markup hook and
  * grabs default markup if no modules invoke the hook.
  *
- * @param type $fedora_object
- * @return type
+ * @param string $pid
+ *   The PID of the object to create markup for.
+ *
+ * @return string
  *   The markup for the Fedora object in the table.
  */
-function islandora_bookmark_generate_markup($fedora_object) {
+function islandora_bookmark_generate_markup($pid, $object_url_info = NULL) {
   module_load_include('inc', 'islandora', 'includes/utilities');
+  $fedora_object = islandora_object_load($pid);
 
-  // Accumulate the output.
-  $output = array();
-
-  // Call cmodel oriented variants first.
-  foreach (islandora_build_hook_list('islandora_bookmark_object_markup', $fedora_object->models) as $hook) {
-    $temp = module_invoke_all($hook, $fedora_object);
-
-    if (!empty($temp)) {
-      $output = array_merge_recursive($output, $temp);
+  if ($fedora_object) {
+    // Set URL info if non provided.
+    if (is_null($object_url_info)) {
+      $object_url_info = array(
+        'path' => "islandora/$pid",
+        'params' => array(),
+        'markup' => $fedora_object->label? $fedora_object->label: $fedora_object->pid,
+      );
     }
+    // Accumulate the output.
+    $output = array();
+
+    // Call CModel oriented variants first.
+    foreach (islandora_build_hook_list('islandora_bookmark_object_markup', $fedora_object->models) as $hook) {
+      $temp = module_invoke_all($hook, $fedora_object, $object_url_info);
+      if (!empty($temp)) {
+        $output = array_merge_recursive($output, $temp);
+      }
+    }
+
+    // Add in the default, if we did not get any results.
+    if (empty($output)) {
+      $output = islandora_bookmark_object_display($object_url_info);
+    }
+
+    arsort($output);
+    $output = implode('', $output);
+  }
+  else {
+    // Handle when we can't access a Fedora object.
+    watchdog('islandora_bookmark', "Tried to render markup for $pid, but was unable to load it.");
+    $output = '<div class="islandora-bookmark-error-message">' . t('Unable to load object @pid.',
+          array('@pid' => $pid)) . '</div>';
   }
 
-  // Add in the default, if we did not get any results.
-  if (empty($output)) {
-    $output = islandora_bookmark_object_display($fedora_object);
-  }
-
-  arsort($output);
-  return implode('', $output);
+  return $output;
 }
 
 /**
  * Themes a Fedora object.
  *
- * @param type $fedora_object
- * @return type
+ * @param array $object_url_info
+ *   Contains information to build an anchor tag ie.
+ *     array(
+ *       'path' => "islandora/$pid",
+ *       'params' => array(),
+ *       'markup' => 'a label',
+ *     );
+ *
+ * @return array
+ *   an associative array containing the output from theme
+ *   islandora-bookmark_object_display
  */
-function islandora_bookmark_object_display($fedora_object) {
-  $output = theme('islandora_bookmark_object_display', array('fedora_object' => $fedora_object));
+function islandora_bookmark_object_display($object_url_info) {
+  $output = theme('islandora_bookmark_object_display', array('object_url_info' => $object_url_info));
 
   return array('Default output' => $output);
 }
 
 /**
- * Callback function for the detailed list view. Returns forms for display and management.
+ * Callback function for the detailed list view.
+ * Returns forms for display and management.
  *
  * @param string $list_id
  *   Id of the bookmark list to be rendered.
@@ -474,18 +503,9 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
 
   // Loop the pids and determine how to display the markup
   foreach ($pids as $pid) {
-    $fedora_object = islandora_object_load($pid);
-    if ($fedora_object) {
-      $rows[$pid] = array(
-        'markup' => islandora_bookmark_generate_markup($fedora_object),
-      );
-    }
-    else {
-      $rows[$pid] = array(
-        'markup' => '<div class="islandora-bookmark-error-message">' . t('Unable to load a Tuque object for @pid',
-          array('@pid' => $pid)) . '</div>'
-      );
-    }
+    $rows[$pid] = array(
+      'markup' => islandora_bookmark_generate_markup($pid),
+    );
   }
   pager_default_initialize(count($all_pids), $num_eles);
   $form['bookmarks']['fieldset']['pager'] = array(
@@ -1379,8 +1399,10 @@ function islandora_bookmark_add_form($form, $form_state) {
  * Form submission handler for the islandora_bookmark_add_form().
  *
  * @global type $user
+ *
  * @param array $form
  * @param array $form_state
+ *
  * @see islandora_bookmark_add_form()
  */
 function islandora_bookmark_add_form_submit($form, &$form_state) {
@@ -1389,7 +1411,7 @@ function islandora_bookmark_add_form_submit($form, &$form_state) {
 
   $bookmark_name = $form_state['values']['listname'];
 
-  // Create a new list
+  // Create a new list.
   $params = array(
     'retrieve' => FALSE,
     'user_id' => $user->uid,
@@ -1460,7 +1482,7 @@ function islandora_bookmark_add_pid($form, &$form_state) {
  * @param type $form
  * @param array $form_state
  *
- * @return type
+ * @return array
  */
 function islandora_bookmark_remove_user($form, &$form_state) {
   return $form['bookmarks']['users'];
@@ -1472,7 +1494,7 @@ function islandora_bookmark_remove_user($form, &$form_state) {
  * @param type $form
  * @param array $form_state
  *
- * @return type
+ * @return array
  */
 function islandora_bookmark_add_user($form, &$form_state) {
   return $form['bookmarks']['users'];
@@ -1483,7 +1505,7 @@ function islandora_bookmark_add_user($form, &$form_state) {
  */
 function islandora_bookmark_islandora_solr_primary_display() {
   return array(
-      'bookmark' => array(
+    'bookmark' => array(
       'name' => t('Bookmark'),
       'module' => 'islandora_bookmark',
       'file' => 'IslandoraSolrResultsBookmark.inc',
