@@ -38,9 +38,11 @@ function hook_CMODEL_PID_islandora_bookmark_object_markup($fedora_object, $objec
 }
 
 /**
- * Hook to collect additional style options used in exporting. 
+ * Hook to collect additional style options used in exporting.
  *
+ * @return array
+ *   Returns an array containing the additional styles for export.
  */
-function islandora_bookmark_export_styles($option) {
+function hook_islandora_bookmark_export_styles($option) {
 
 }

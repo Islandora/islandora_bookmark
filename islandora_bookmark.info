@@ -5,7 +5,8 @@ package = Islandora Bookmark
 configure = admin/islandora/islandora-bookmark
 version = 7.x-dev
 core = 7.x
-files[] = Bookmark.inc
-files[] = islandora_bookmark_api.inc
+files[] = includes/bookmark.inc
+files[] = includes/bookmark.api.inc
+files[] = includes/bookmark.admin.inc
 
 stylesheets[all][] = css/islandora_bookmark.css
