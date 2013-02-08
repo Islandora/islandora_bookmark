@@ -6,7 +6,7 @@ configure = admin/islandora/islandora-bookmark
 version = 7.x-dev
 core = 7.x
 files[] = includes/bookmark.inc
-files[] = includes/bookmark.api.inc
-files[] = includes/bookmark.admin.inc
+files[] = includes/api.inc
+files[] = includes/admin.inc
 
 stylesheets[all][] = css/islandora_bookmark.css
