@@ -77,19 +77,12 @@ function islandora_bookmark_results_form($form, &$form_state, $object_results, $
     'markup' => t('Label'),
   );
   $rows = array();
-
   $form_state['islandora_solr_query_processor'] = $query_processor;
-  $label_field = variable_get('islandora_solr_object_label_field', 'fgs_label_s');
   foreach ($object_results as $object_result) {
     $doc = $object_result['solr_doc'];
     $markup = '';
-    if (isset($doc[$label_field])) {
-      if (is_array($doc[$label_field])) {
-        $markup = reset($doc[$label_field]);
-      }
-      else {
-        $markup = $doc[$label_field];
-      }
+    if (isset($doc['object_label'])) {
+      $markup = $doc['object_label'];
     }
     else {
       $markup = $doc['PID'];
