@@ -444,8 +444,7 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
   drupal_add_css(drupal_get_path('module', 'islandora_bookmark') . '/css/islandora_bookmark.css');
   $bookmark = islandora_bookmark_get_bookmark_by_number($list_id);
 
-  if (module_exists('islandora_scholar')) {
-    module_load_include('inc', 'citation_exporter', 'CitationExporter');
+  if (module_exists('citation_exporter')) {
     if (CitationExporter::ReadyToExport()) {
       $citation_export_head = array(
         '#type' => 'html_tag',
