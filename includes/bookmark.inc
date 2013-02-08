@@ -206,8 +206,6 @@ class Bookmark {
    *
    */
   public function add_pids($pids) {
-    module_load_include('inc', 'fedora_repository', 'api/tuque');
-
     foreach ($pids as $key => $value) {
       if (islandora_object_load($value)) {
           if (!in_array($value, $this->pid_list)) {
