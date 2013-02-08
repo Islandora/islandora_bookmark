@@ -60,7 +60,7 @@ function islandora_bookmark_results_form($form, &$form_state, $object_results, $
   form_load_include($form_state, 'inc', 'islandora_bookmark', 'IslandoraSolrResultsBookmark');
 
   if (module_exists('islandora_scholar')) {
-    module_load_include('inc', 'citation_exporter', 'CitationExporter');
+    module_load_include('inc', 'citation_exporter', 'includes/citation.export');
     if (CitationExporter::ReadyToExport()) {
       $citation_export_head = array(
         '#type' => 'html_tag',
