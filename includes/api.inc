@@ -3,7 +3,6 @@
 /**
  * @file
  * Houses helper functions used in the islandora_bookmark module
- *
  */
 
 /**
@@ -18,7 +17,6 @@
  *   An array of PidList objects.
  */
 function islandora_bookmark_get_user_owned_bookmarks() {
-  module_load_include('inc', 'islandora_bookmark', 'Bookmark');
   global $user;
 
   $listids = array();
@@ -90,8 +88,7 @@ function islandora_bookmark_get_user_owned_bookmarks() {
  *   An array of Bookmarks.
  */
 function islandora_bookmark_get_user_shared_bookmarks() {
-  module_load_include('inc', 'islandora_bookmark', 'Bookmark');
-  global $user;
+    global $user;
 
   $owner_ids = array();
   $shared_ids = array();
@@ -157,8 +154,7 @@ function islandora_bookmark_get_user_shared_bookmarks() {
  *   PidList object.
  */
 function islandora_bookmark_get_bookmark_by_number($listid) {
-  module_load_include('inc', 'islandora_bookmark', 'Bookmark');
-  global $user;
+    global $user;
 
   if (!preg_match('/session_/', $listid)) {
     $listresult = db_query('SELECT listname, listowner from {islandora_bookmark_list_names} WHERE listid = :listid', array(':listid' => $listid))->fetchObject();
@@ -206,8 +202,6 @@ function islandora_bookmark_get_bookmark_by_number($listid) {
  *   An array containing listids.
  */
 function islandora_bookmark_get_bookmarks_visible_to_user($pid, $uid) {
-  module_load_include('inc', 'islandora_bookmark', 'Bookmark');
-
   $lists = array();
   // SESSION FIRST
   if ($uid == 0 && !empty($_SESSION['islandora_bookmark'])) {
