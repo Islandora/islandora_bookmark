@@ -55,7 +55,6 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
  */
 function islandora_bookmark_results_form($form, &$form_state, $object_results, $query_processor) {
   module_load_include('inc', 'islandora_bookmark', 'includes/api');
-  module_load_include('inc', 'islandora_bookmark', 'includes/bookmark');
 
   form_load_include($form_state, 'inc', 'islandora_bookmark', 'IslandoraSolrResultsBookmark');
 
@@ -220,7 +219,6 @@ function islandora_bookmark_results_form_submit($form, &$form_state) {
   unset($queries['q']);
   $form_state['redirect'] = array(request_path(), array('query' => $queries));
   module_load_include('inc', 'islandora_bookmark', 'includes/api');
-  module_load_include('inc', 'islandora_bookmark', 'includes/bookmark');
 
   // Grab and modify the query proc's limit to 100000 incase we need
   // to retrieve all objects

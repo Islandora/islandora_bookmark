@@ -62,7 +62,7 @@ function islandora_bookmark_menu() {
       'page callback' => 'drupal_get_form',
       'page arguments' => array('islandora_bookmark_admin_settings'),
       'access arguments' => array('administer islandora_bookmark'),
-      'file' => 'includes/admin.inc',
+      'file' => 'includes/admin.form.inc',
   );
 
   return $items;
@@ -242,9 +242,7 @@ function islandora_bookmark_delete_bookmark($form, &$form_state) {
  * @return type
  */
 function islandora_bookmark_delete_bookmark_confirm($form, &$form_state, $list_id) {
-  module_load_include('inc', 'islandora_bookmark', 'includes/bookmark');
   module_load_include('inc', 'islandora_bookmark', 'includes/api');
-
   $bookmark_object = islandora_bookmark_get_bookmark_by_number($list_id);
   $form_state['bookmark_object'] = $bookmark_object;
   return confirm_form($form, t('Are you sure you want to delete the bookmark list %bookmark_name?', array('%bookmark_name' => $bookmark_object->bookmark_name)), 'islandora-bookmark/listid/' . $list_id, t('This action cannot be undone.'), t('Delete'), t('Cancel'));
@@ -257,7 +255,6 @@ function islandora_bookmark_delete_bookmark_confirm($form, &$form_state, $list_i
  * @param type $form_state
  */
 function islandora_bookmark_delete_bookmark_confirm_submit($form, &$form_state) {
-  module_load_include('inc', 'islandora_bookmark', 'includes/bookmark');
   module_load_include('inc', 'islandora_bookmark', 'includes/api');
 
   $bookmark_object = $form_state['bookmark_object'];
@@ -287,7 +284,6 @@ function islandora_bookmark_remove_self($form, &$form_state) {
  * @return type
  */
 function islandora_bookmark_remove_self_confirm($form, &$form_state, $list_id) {
-  module_load_include('inc', 'islandora_bookmark', 'includes/bookmark');
   module_load_include('inc', 'islandora_bookmark', 'includes/api');
 
   $bookmark_object = islandora_bookmark_get_bookmark_by_number($list_id);
@@ -305,7 +301,6 @@ function islandora_bookmark_remove_self_confirm($form, &$form_state, $list_id) {
  * @param type $form_state
  */
 function islandora_bookmark_remove_self_confirm_submit($form, &$form_state) {
-  module_load_include('inc', 'islandora_bookmark', 'includes/bookmark');
   module_load_include('inc', 'islandora_bookmark', 'includes/api');
   global $user;
 
@@ -325,7 +320,6 @@ function islandora_bookmark_remove_self_confirm_submit($form, &$form_state) {
  * Callback function for updating list settings
  */
 function islandora_bookmark_update_bookmark($form, &$form_state) {
-  module_load_include('inc', 'islandora_bookmark', 'includes/bookmark');
   module_load_include('inc', 'islandora_bookmark', 'includes/api');
 
   $bookmark_object = $form_state['bookmark_object'];
@@ -438,9 +432,7 @@ function islandora_bookmark_detailed_forms($list_id) {
 function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
   global $user;
   module_load_include('inc', 'islandora_bookmark', 'includes/api');
-  module_load_include('inc', 'islandora_bookmark', 'includes/bookmark');
   module_load_include('inc', 'islandora', 'includes/utilities');
-  module_load_include('inc', 'islandora', 'includes/IslandoraTuque');
   drupal_add_css(drupal_get_path('module', 'islandora_bookmark') . '/css/islandora_bookmark.css');
   $bookmark = islandora_bookmark_get_bookmark_by_number($list_id);
 
@@ -809,8 +801,6 @@ function islandora_bookmark_detailed_form($form, &$form_state, $list_id) {
  */
 function islandora_bookmark_detailed_form_submit($form, &$form_state) {
   module_load_include('inc', 'islandora_bookmark', 'includes/api');
-  module_load_include('inc', 'islandora', 'includes/IslandoraTuque');
-
   $queries = $_GET;
   unset($queries['q']);
   $form_state['redirect'] = array(request_path(), array('query' => $queries));
@@ -1010,9 +1000,7 @@ function islandora_bookmark_detailed_form_submit($form, &$form_state) {
 function islandora_bookmark_detailed_form_manage($form, &$form_state, $list_id) {
   global $user;
   module_load_include('inc', 'islandora_bookmark', 'includes/api');
-  module_load_include('inc', 'islandora_bookmark', 'includes/bookmark');
   module_load_include('inc', 'islandora', 'includes/utilities');
-  module_load_include('inc', 'islandora', 'includes/IslandoraTuque');
   drupal_add_css(drupal_get_path('module', 'islandora_bookmark') . '/css/islandora_bookmark.css');
   $bookmark = islandora_bookmark_get_bookmark_by_number($list_id);
 
@@ -1206,7 +1194,6 @@ function islandora_bookmark_islandora_bookmark_export_handler() {
  * @param type $pids
  */
 function islandora_bookmark_export_pids_as_csv($pids) {
-  module_load_include('inc', 'islandora', 'includes/IslandoraTuque');
   // send response headers to the browser
   $csv_array = array();
   foreach ($pids as $key => $value) {
@@ -1237,7 +1224,6 @@ function islandora_bookmark_export_pids_as_csv($pids) {
 function islandora_bookmark_overview_form($form, &$form_state) {
   drupal_add_css(drupal_get_path('module', 'islandora_bookmark') . '/css/islandora_bookmark.css');
   module_load_include('inc', 'islandora_bookmark', 'includes/api');
-  module_load_include('inc', 'islandora_bookmark', 'includes/bookmark');
 
   $form = array(
     '#tree' => TRUE,
@@ -1404,7 +1390,6 @@ function islandora_bookmark_add_form($form, $form_state) {
  */
 function islandora_bookmark_add_form_submit($form, &$form_state) {
   global $user;
-  module_load_include('inc', 'islandora_bookmark', 'includes/bookmark');
 
   $bookmark_name = $form_state['values']['listname'];
 
@@ -1446,7 +1431,6 @@ function islandora_bookmark_add_form_submit($form, &$form_state) {
  * @return type
  */
 function islandora_bookmark_add_pid($form, &$form_state) {
-  module_load_include('inc', 'islandora_bookmark', 'includes/bookmark');
   module_load_include('inc', 'islandora_bookmark', 'includes/api');
   $key = $form_state['values']['add_bookmarks'];
   $pid = $form_state['islandora_bookmark_pid'];
