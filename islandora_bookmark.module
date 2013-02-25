@@ -163,6 +163,7 @@ function islandora_bookmark_block_view($delta = '') {
         }
         $block['subject'] = t('Islandora Bookmark');
         $block['content'] = islandora_bookmark_get_object_form($pid);
+        $block['pid'] = $pid;
       }
       break;
   }
