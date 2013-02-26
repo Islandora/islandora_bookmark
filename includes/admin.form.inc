@@ -2,18 +2,21 @@
 
 /**
  * @file
- * Contains all admin related functionality
+ * Handles the display/submission of the admin settings form for this module.
  */
 
 /**
- * Function to return admin settings form
+ * Defines the admin settings form.
  *
- * @param type $form
- * @param type $form_state
- * @return
- * The form array.
+ * @param array $form
+ *   The Drupal form definition.
+ * @param array $form_state
+ *   The Drupal form state.
+ *
+ * @return array
+ *   The Drupal form definition.
  */
-function islandora_bookmark_admin_settings($form, &$form_state) {
+function islandora_bookmark_admin_settings(array $form, array &$form_state) {
   $form = array(
     'overview_page_elements' => array(
       '#type' => 'textfield',
@@ -47,21 +50,23 @@ function islandora_bookmark_admin_settings($form, &$form_state) {
 /**
  * Function that sets the Drupal variables with user's input.
  *
- * @param type $form
- * @param type $form_state
+ * @param array $form
+ *   The Drupal form definition.
+ * @param array $form_state
+ *   The Drupal form state.
  */
-function islandora_bookmark_admin_settings_submit($form, &$form_state) {
+function islandora_bookmark_admin_settings_submit(array $form, array &$form_state) {
   drupal_set_message(t('The settings have been updated!'));
   $id = $form_state['triggering_element']['#id'];
   switch ($id) {
     case 'edit-submit':
-        variable_set('islandora_bookmark_overview_page_elements', $form_state['values']['overview_page_elements']);
-        variable_set('islandora_bookmark_detailed_page_elements', $form_state['values']['detailed_page_elements']);
+      variable_set('islandora_bookmark_overview_page_elements', $form_state['values']['overview_page_elements']);
+      variable_set('islandora_bookmark_detailed_page_elements', $form_state['values']['detailed_page_elements']);
       break;
+
     case 'edit-reset':
-        variable_del('islandora_bookmark_overview_page_elements');
-        variable_del('islandora_bookmark_detailed_page_elements');
+      variable_del('islandora_bookmark_overview_page_elements');
+      variable_del('islandora_bookmark_detailed_page_elements');
       break;
   }
 }
-
