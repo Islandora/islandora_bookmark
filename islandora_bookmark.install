@@ -4,6 +4,10 @@
  * @file
  * Install and uninstall functions for the islandora_bookmark module.
  */
+
+/**
+ * Implements hook_schema().
+ */
 function islandora_bookmark_schema() {
   $schema['islandora_bookmark_list_users'] = array(
     'description' => 'Stores users and their lists',
