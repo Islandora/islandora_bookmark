@@ -265,8 +265,8 @@ function islandora_bookmark_results_form_submit(array $form, array &$form_state)
     }
     else {
       if ($broke_count > 0) {
-        $broken_pids = format_plural($broke_count, 'The following object !broke_pids was unable to be exported as it does not exist.',
-                       'The following objects !broke_pids were unable to be exported as they do not exist.',
+        $broken_pids = format_plural($broke_count, 'The following object was unable to be exported as it does not exist: !broke_pids.',
+                       'The following objects were unable to be exported as they do not exist: !broke_pids.',
                        array('!broke_pids' => trim($broke_pids)));
         drupal_set_message($broken_pids, 'error');
       }
@@ -305,8 +305,8 @@ function islandora_bookmark_results_form_submit(array $form, array &$form_state)
     }
     else {
       if ($broke_count > 0) {
-        $broken_pids = format_plural($broke_count, 'The following object !broke_pids was unable to be exported as it does not exist.',
-                       'The following objects !broke_pids were unable to be exported as they do not exist.',
+        $broken_pids = format_plural($broke_count, 'The following object was unable to be exported as it does not exist: !broke_pids.',
+                       'The following objects were unable to be exported as they do not exist: !broke_pids.',
                        array('!broke_pids' => trim($broke_pids)));
         drupal_set_message($broken_pids, 'error');
       }
@@ -328,8 +328,8 @@ function islandora_bookmark_results_form_submit(array $form, array &$form_state)
       }
     }
     if ($broke_count > 0) {
-      $broken_pids = format_plural($broke_count, 'The following object !broke_pids was unable to be bookmarked as it does not exist.',
-                     'The following objects !broke_pids were unable to be bookmarked as they do not exist.',
+      $broken_pids = format_plural($broke_count, 'The following object was unable to be bookmarked as it does not exist: !broke_pids.',
+                     'The following objects were unable to be bookmarked as they do not exist: !broke_pids.',
                      array('!broke_pids' => trim($broke_pids)));
       drupal_set_message($broken_pids, 'error');
     }
@@ -412,8 +412,8 @@ function islandora_bookmark_results_form_submit(array $form, array &$form_state)
     }
 
     if ($broke_count > 0) {
-      $broken_pids = format_plural($broke_count, 'The following object !broke_pids was unable to be added as it does not exist.',
-                     'The following objects !broke_pids were unable to be added as they do not exist.',
+      $broken_pids = format_plural($broke_count, 'The following object was unable to be added as it does not exist: !broke_pids.',
+                     'The following objects were unable to be added as they do not exist: !broke_pids',
                      array('!broke_pids' => trim($broke_pids)));
       drupal_set_message($broken_pids, 'error');
     }
@@ -444,8 +444,8 @@ function islandora_bookmark_results_form_submit(array $form, array &$form_state)
           $plural_skipped = '';
 
           if ($skipped_count > 0) {
-            $plural_skipped = format_plural($skipped_count, 'The object (!skipped_pids) was not added as it already exists in the bookmark list.',
-                              'The objects (!skipped_pids) were not added as they already exist in the bookmark list.',
+            $plural_skipped = format_plural($skipped_count, 'The following object was not added as it already exists in the bookmark list: !skipped_pids.',
+                              'The following objects were not added as they already exist in the bookmark list: !skipped_pids.',
                               array('!skipped_pids' => trim($skipped_pids)));
           }
           drupal_set_message(t('The @plural_add been added to @listname. @plural_skipped',
@@ -461,8 +461,8 @@ function islandora_bookmark_results_form_submit(array $form, array &$form_state)
         }
       }
       else {
-        $plural_skipped = format_plural($skipped_count, 'The pid (!skipped_pids) was not added as it already exists in !listname.',
-                          'The pids (!skipped_pids) were not added as they already exist in !listname',
+        $plural_skipped = format_plural($skipped_count, 'The following PID was not added as it already exists in !listname: !skipped_pids.',
+                          'The following PIDs (!skipped_pids) were not added as they already exist in !listname: !skipped_pids.',
                           array('!skipped_pids' => trim($skipped_pids), '!listname' => $bookmark_object->bookmarkName)
         );
         drupal_set_message($plural_skipped, 'warning');

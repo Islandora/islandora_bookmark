@@ -10,7 +10,7 @@
  */
 function islandora_bookmark_schema() {
   $schema['islandora_bookmark_list_users'] = array(
-    'description' => 'Stores users and their lists',
+    'description' => 'Stores users and their bookmark lists',
     'fields' => array(
       'uid' => array(
         'description' => 'The User ID.',
@@ -28,7 +28,7 @@ function islandora_bookmark_schema() {
   );
 
   $schema['islandora_bookmark_list_pids'] = array(
-    'description' => 'Stores pids and the lists they are associated to',
+    'description' => 'Stores PIDs and the lists they are associated to',
     'fields' => array(
       'listid' => array(
         'description' => 'The ID of the list',
