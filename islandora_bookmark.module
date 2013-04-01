@@ -191,7 +191,7 @@ function islandora_bookmark_permission() {
     ),
     'share islandora bookmarks' => array(
       'title' => t('Share bookmarks'),
-      'description' => t('Share own bookmarks with other users.'),
+      'description' => t('Share created bookmarks with other users.'),
     ),
   );
 }
@@ -920,7 +920,7 @@ function islandora_bookmark_detailed_form_submit(array $form, array &$form_state
     }
     else {
       if ($broke_count > 0) {
-        $broken_pids = format_plural($broke_count, 'The following object could not to be exported as it does not exist: !broke_pids.',
+        $broken_pids = format_plural($broke_count, 'The following object could not be exported as it does not exist: !broke_pids.',
                        'The following objects could not be exported as they do no exist: !broke_pids.',
                        array('!broke_pids' => trim($broke_pids)));
         drupal_set_message($broken_pids, 'error');
@@ -978,7 +978,7 @@ function islandora_bookmark_detailed_form_submit(array $form, array &$form_state
     $remove_count = count($bookmark->pidList);
     $bookmark->removeAllPids();
 
-    drupal_set_message(t('All pids have been removed from the @remove_list list.',
+    drupal_set_message(t('All PIDs have been removed from the @remove_list list.',
         array(
           '@remove_list' => $bookmark->bookmarkName,
         )));
@@ -1015,8 +1015,8 @@ function islandora_bookmark_detailed_form_submit(array $form, array &$form_state
     }
     else {
       if ($broke_count > 0) {
-        $broken_pids = format_plural($broke_count, 'The following object !broke_pids was unable to be exported as it does not exist.',
-                       'The following objects !broke_pids were unable to be exported as they do no exist.',
+        $broken_pids = format_plural($broke_count, 'The following object was unable to be exported as it does not exist: !broke_pids.',
+                       'The following objects were unable to be exported as they do no exist: !broke_pids.',
                        array('!broke_pids' => trim($broke_pids)));
         drupal_set_message($broken_pids, 'error');
       }
@@ -1344,7 +1344,7 @@ function islandora_bookmark_overview_form(array $form, array &$form_state) {
   else {
     $form['shared_bookmarks']['fieldset']['empty'] = array(
       '#type' => 'item',
-      '#markup' => t('No bookmarks currently shared with you.'),
+      '#markup' => t('No bookmarks are currently being shared with you.'),
     );
   }
 
@@ -1454,7 +1454,7 @@ function islandora_bookmark_add_form_submit(array $form, array &$form_state) {
   $temp_list = new Bookmark($params);
   $saved_list = NULL;
   if ($user->uid == 0) {
-    $saved_list = 'Note that lists created when not logged will not be saved.';
+    $saved_list = 'Log into an account to save bookmark lists; lists created anonymously will not be saved.';
   }
   drupal_set_message(t('The new list @listname was created. @saved',
       array(
