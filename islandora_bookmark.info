@@ -3,8 +3,9 @@ description = Allows users to build, manage and track lists of PIDs.
 dependencies[] = islandora
 package = Islandora
 configure = admin/islandora/islandora-bookmark
-version = 7.x-1.1
+version = 7.x-dev
 core = 7.x
 files[] = includes/bookmark.inc
 files[] = includes/solr_results.inc
 stylesheets[all][] = css/islandora_bookmark.css
+
