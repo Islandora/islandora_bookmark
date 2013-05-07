@@ -254,7 +254,9 @@ function islandora_bookmark_delete_bookmark_confirm(array $form, array &$form_st
   module_load_include('inc', 'islandora_bookmark', 'includes/api');
   $bookmark_object = islandora_bookmark_get_bookmark_by_number($list_id);
   $form_state['bookmark_object'] = $bookmark_object;
-  return confirm_form($form, t('Are you sure you want to delete the @type list %bookmark_name?', array('%bookmark_name' => $bookmark_object->bookmarkName, '@type' => variable_get('islandora_bookmark_type', 'bookmark'))), 'islandora-bookmark/listid/' . $list_id, t('This action cannot be undone.'), t('Delete'), t('Cancel'));
+  return confirm_form($form, t('Are you sure you want to delete the @type list %bookmark_name?', array(
+    '%bookmark_name' => $bookmark_object->bookmarkName,
+    '@type' => variable_get('islandora_bookmark_type', 'bookmark'))), 'islandora-bookmark/listid/' . $list_id, t('This action cannot be undone.'), t('Delete'), t('Cancel'));
 }
 
 /**
@@ -305,7 +307,9 @@ function islandora_bookmark_remove_self_confirm(array $form, array &$form_state,
 
   $bookmark_object = islandora_bookmark_get_bookmark_by_number($list_id);
   $form_state['bookmark_object'] = $bookmark_object;
-  return confirm_form($form, t('Are you sure you want to remove yourself from the @type %bookmark_name ?', array('%bookmark_name' => $bookmark_object->bookmarkName, '@type' => variable_get('islandora_bookmark_type', 'bookmark'))), 'islandora-bookmark/listid/' . $list_id, t('This action cannot be undone.'),
+  return confirm_form($form, t('Are you sure you want to remove yourself from the @type %bookmark_name ?', array(
+    '%bookmark_name' => $bookmark_object->bookmarkName,
+    '@type' => variable_get('islandora_bookmark_type', 'bookmark'))), 'islandora-bookmark/listid/' . $list_id, t('This action cannot be undone.'),
     t('Delete'),
     t('Cancel'));
 }
@@ -596,7 +600,7 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
 
     foreach ($export as $module_name => $export_array) {
       foreach ($export_array as $name => $export_func) {
-        $export_options[t($module_name)][$name] = $name;
+        $export_options[$module_name][$name] = $name;
         $form_state['islandora_bookmark_export'][$name] = $export_func;
         $export_styles[$name] = islandora_bookmark_get_export_format_options($name);
       }
