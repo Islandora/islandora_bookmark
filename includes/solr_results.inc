@@ -164,7 +164,7 @@ function islandora_bookmark_results_form(array $form, array &$form_state, $objec
 
     if (count($user_bookmarks) > 0) {
       $save_options = array();
-      $save_options['default'] = t('- Select bookmark list -');
+      $save_options['default'] = t('- Select @type list -', array('@type' => variable_get('islandora_bookmark_type', 'bookmark')));
 
       foreach ($user_bookmarks as $bookmark) {
         $save_options[$bookmark->bookmarkId] = $bookmark->bookmarkName;
@@ -173,7 +173,7 @@ function islandora_bookmark_results_form(array $form, array &$form_state, $objec
       $form['islandora_bookmark_save_fieldset'] = array(
         'fieldset' => array(
           '#type' => 'fieldset',
-          '#title' => t('Bookmark'),
+          '#title' => t('@type', array('@type' => ucwords(variable_get('islandora_bookmark_type', 'bookmark')))),
           '#weight' => 0,
         ),
       );
