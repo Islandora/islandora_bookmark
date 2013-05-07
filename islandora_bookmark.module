@@ -193,6 +193,10 @@ function islandora_bookmark_permission() {
       'title' => t('Share bookmarks'),
       'description' => t('Share created bookmarks with other users.'),
     ),
+    'export islandora bookmarks' => array(
+      'title' => t('Export bookmarks'),
+      'description' => t('Export bookmark lists.'),
+    ),
   );
 }
 
@@ -590,7 +594,7 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
     );
   }
 
-  if (count($pids) != 0) {
+  if (count($pids) != 0 && user_access('export islandora bookmarks')) {
     $form['bookmarks']['fieldset']['format_opts'] = array(
       '#weight' => 4,
     );
