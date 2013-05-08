@@ -101,70 +101,72 @@ function islandora_bookmark_results_form(array $form, array &$form_state, $objec
     );
   }
   if (count($rows) > 0) {
-    $export = islandora_bookmark_get_export_options();
-    $export_options['default'] = t('- Export type -');
-    $export_styles = array();
-    foreach ($export as $module_name => $export_array) {
-      foreach ($export_array as $name => $export_func) {
-        $export_options[$module_name][$name] = $name;
-        $form_state['islandora_bookmark_export'][$name] = $export_func;
-        $export_styles[$name] = islandora_bookmark_get_export_format_options($name);
+    if (user_access('export islandora bookmarks')) {
+      $export = islandora_bookmark_get_export_options();
+      $export_options['default'] = t('- Export type -');
+      $export_styles = array();
+      foreach ($export as $module_name => $export_array) {
+        foreach ($export_array as $name => $export_func) {
+          $export_options[$module_name][$name] = $name;
+          $form_state['islandora_bookmark_export'][$name] = $export_func;
+          $export_styles[$name] = islandora_bookmark_get_export_format_options($name);
+        }
       }
-    }
 
-    $form['islandora_bookmark_export_fieldset'] = array(
-      'fieldset' => array(
-        '#type' => 'fieldset',
-        '#title' => t('Export to file'),
-        '#weight' => 0,
-      ),
-    );
+      $form['islandora_bookmark_export_fieldset'] = array(
+        'fieldset' => array(
+          '#type' => 'fieldset',
+          '#title' => t('Export to file'),
+          '#weight' => 0,
+        ),
+      );
 
-    $form['islandora_bookmark_export_fieldset']['fieldset']['export_styles'] = array(
-      '#weight' => 4,
-    );
-    foreach ($export_styles as $key => $value) {
-      if (!empty($export_styles[$key])) {
-        $form['islandora_bookmark_export_fieldset']['fieldset']['export_styles'][$key] = array(
-          '#type' => 'select',
-          '#title' => t('Style'),
-          '#options' => $export_styles[$key],
-          '#weight' => 4,
-          '#name' => 'islandora_bookmark_export_styles_' . $key,
-          '#states' => array(
-            'visible' => array(
-              ':input[name="islandora_bookmark_export_options_select"]' => array('value' => $key),
+      $form['islandora_bookmark_export_fieldset']['fieldset']['export_styles'] = array(
+        '#weight' => 4,
+      );
+      foreach ($export_styles as $key => $value) {
+        if (!empty($export_styles[$key])) {
+          $form['islandora_bookmark_export_fieldset']['fieldset']['export_styles'][$key] = array(
+            '#type' => 'select',
+            '#title' => t('Style'),
+            '#options' => $export_styles[$key],
+            '#weight' => 4,
+            '#name' => 'islandora_bookmark_export_styles_' . $key,
+            '#states' => array(
+              'visible' => array(
+                ':input[name="islandora_bookmark_export_options_select"]' => array('value' => $key),
+              ),
             ),
-          ),
-        );
+          );
+        }
       }
+
+      $form['islandora_bookmark_export_fieldset']['fieldset']['export_options'] = array(
+        '#type' => 'select',
+        '#options' => $export_options,
+        '#weight' => 3,
+        '#title' => t('Format'),
+        '#name' => 'islandora_bookmark_export_options_select',
+      );
+
+      $form['islandora_bookmark_export_fieldset']['fieldset']['export_selected_submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Export selected objects'),
+        '#name' => 'export_selected',
+        '#weight' => 5,
+      );
+      $form['islandora_bookmark_export_fieldset']['fieldset']['export_all_submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Export all results'),
+        '#name' => 'export_all',
+        '#weight' => 5,
+      );
     }
-
-    $form['islandora_bookmark_export_fieldset']['fieldset']['export_options'] = array(
-      '#type' => 'select',
-      '#options' => $export_options,
-      '#weight' => 3,
-      '#title' => t('Format'),
-      '#name' => 'islandora_bookmark_export_options_select',
-    );
-
-    $form['islandora_bookmark_export_fieldset']['fieldset']['export_selected_submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('Export selected objects'),
-      '#name' => 'export_selected',
-      '#weight' => 5,
-    );
-    $form['islandora_bookmark_export_fieldset']['fieldset']['export_all_submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('Export all results'),
-      '#name' => 'export_all',
-      '#weight' => 5,
-    );
     $user_bookmarks = islandora_bookmark_get_user_owned_bookmarks();
 
     if (count($user_bookmarks) > 0) {
       $save_options = array();
-      $save_options['default'] = t('- Select bookmark list -');
+      $save_options['default'] = t('- Select @type list -', array('@type' => variable_get('islandora_bookmark_type', 'bookmark')));
 
       foreach ($user_bookmarks as $bookmark) {
         $save_options[$bookmark->bookmarkId] = $bookmark->bookmarkName;
@@ -173,7 +175,7 @@ function islandora_bookmark_results_form(array $form, array &$form_state, $objec
       $form['islandora_bookmark_save_fieldset'] = array(
         'fieldset' => array(
           '#type' => 'fieldset',
-          '#title' => t('Bookmark'),
+          '#title' => t('@type', array('@type' => ucwords(variable_get('islandora_bookmark_type', 'bookmark')))),
           '#weight' => 0,
         ),
       );
