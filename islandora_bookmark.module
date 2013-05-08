@@ -381,7 +381,7 @@ function islandora_bookmark_generate_markup($pid, $object_url_info = NULL) {
     // Set URL info if non provided.
     if (is_null($object_url_info)) {
       $object_url_info = array(
-        'path' => "islandora/$pid",
+        'path' => "islandora/object/$pid",
         'params' => array(),
         'markup' => $fedora_object->label ? $fedora_object->label : $fedora_object->pid,
       );
