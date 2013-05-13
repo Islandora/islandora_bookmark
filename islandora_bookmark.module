@@ -773,9 +773,14 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
         }
 
         $selectoptions = array("" => t("- Select user -"));
-
+        if ($user->uid != 0) {
+          $options['0'] = array(
+            'uid' => 0,
+            'name' => variable_get('anonymous', 'anonymous'),
+          );
+        }
         // Get all users for use in select for forms.
-        $result = db_query("SELECT uid, name FROM {users} ORDER BY uid");
+        $result = db_query("SELECT uid, name FROM {users} WHERE STATUS != 0 ORDER BY uid");
 
         foreach ($result as $record) {
           if ($record->uid != $user->uid) {
