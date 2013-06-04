@@ -160,7 +160,15 @@ function islandora_bookmark_block_view($delta = '') {
 
   switch ($delta) {
     case 'islandora_bookmark':
+      // Make sure we're on the islandora/object route.
       if (arg(0) == 'islandora' AND arg(1) == 'object') {
+        // Don't do anything if we're beyond islandora/object/PID.
+        // That is, only show the bookmark block if we're on the standard view.
+        if (arg(3)) {
+          break;
+        }
+
+        // Snag the PID and hook up the block.
         if (arg(2)) {
           $pid = arg(2);
         }
