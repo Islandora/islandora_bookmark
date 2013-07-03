@@ -101,70 +101,72 @@ function islandora_bookmark_results_form(array $form, array &$form_state, $objec
     );
   }
   if (count($rows) > 0) {
-    $export = islandora_bookmark_get_export_options();
-    $export_options['default'] = t('- Export type -');
-    $export_styles = array();
-    foreach ($export as $module_name => $export_array) {
-      foreach ($export_array as $name => $export_func) {
-        $export_options[$module_name][$name] = $name;
-        $form_state['islandora_bookmark_export'][$name] = $export_func;
-        $export_styles[$name] = islandora_bookmark_get_export_format_options($name);
+    if (user_access('export islandora bookmarks')) {
+      $export = islandora_bookmark_get_export_options();
+      $export_options['default'] = t('- Export type -');
+      $export_styles = array();
+      foreach ($export as $module_name => $export_array) {
+        foreach ($export_array as $name => $export_func) {
+          $export_options[$module_name][$name] = $name;
+          $form_state['islandora_bookmark_export'][$name] = $export_func;
+          $export_styles[$name] = islandora_bookmark_get_export_format_options($name);
+        }
       }
-    }
 
-    $form['islandora_bookmark_export_fieldset'] = array(
-      'fieldset' => array(
-        '#type' => 'fieldset',
-        '#title' => t('Export to file'),
-        '#weight' => 0,
-      ),
-    );
+      $form['islandora_bookmark_export_fieldset'] = array(
+        'fieldset' => array(
+          '#type' => 'fieldset',
+          '#title' => t('Export to file'),
+          '#weight' => 0,
+        ),
+      );
 
-    $form['islandora_bookmark_export_fieldset']['fieldset']['export_styles'] = array(
-      '#weight' => 4,
-    );
-    foreach ($export_styles as $key => $value) {
-      if (!empty($export_styles[$key])) {
-        $form['islandora_bookmark_export_fieldset']['fieldset']['export_styles'][$key] = array(
-          '#type' => 'select',
-          '#title' => t('Style'),
-          '#options' => $export_styles[$key],
-          '#weight' => 4,
-          '#name' => 'islandora_bookmark_export_styles_' . $key,
-          '#states' => array(
-            'visible' => array(
-              ':input[name="islandora_bookmark_export_options_select"]' => array('value' => $key),
+      $form['islandora_bookmark_export_fieldset']['fieldset']['export_styles'] = array(
+        '#weight' => 4,
+      );
+      foreach ($export_styles as $key => $value) {
+        if (!empty($export_styles[$key])) {
+          $form['islandora_bookmark_export_fieldset']['fieldset']['export_styles'][$key] = array(
+            '#type' => 'select',
+            '#title' => t('Style'),
+            '#options' => $export_styles[$key],
+            '#weight' => 4,
+            '#name' => 'islandora_bookmark_export_styles_' . $key,
+            '#states' => array(
+              'visible' => array(
+                ':input[name="islandora_bookmark_export_options_select"]' => array('value' => $key),
+              ),
             ),
-          ),
-        );
+          );
+        }
       }
+
+      $form['islandora_bookmark_export_fieldset']['fieldset']['export_options'] = array(
+        '#type' => 'select',
+        '#options' => $export_options,
+        '#weight' => 3,
+        '#title' => t('Format'),
+        '#name' => 'islandora_bookmark_export_options_select',
+      );
+
+      $form['islandora_bookmark_export_fieldset']['fieldset']['export_selected_submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Export selected objects'),
+        '#name' => 'export_selected',
+        '#weight' => 5,
+      );
+      $form['islandora_bookmark_export_fieldset']['fieldset']['export_all_submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Export all results'),
+        '#name' => 'export_all',
+        '#weight' => 5,
+      );
     }
-
-    $form['islandora_bookmark_export_fieldset']['fieldset']['export_options'] = array(
-      '#type' => 'select',
-      '#options' => $export_options,
-      '#weight' => 3,
-      '#title' => t('Format'),
-      '#name' => 'islandora_bookmark_export_options_select',
-    );
-
-    $form['islandora_bookmark_export_fieldset']['fieldset']['export_selected_submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('Export selected objects'),
-      '#name' => 'export_selected',
-      '#weight' => 5,
-    );
-    $form['islandora_bookmark_export_fieldset']['fieldset']['export_all_submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('Export all results'),
-      '#name' => 'export_all',
-      '#weight' => 5,
-    );
     $user_bookmarks = islandora_bookmark_get_user_owned_bookmarks();
 
     if (count($user_bookmarks) > 0) {
       $save_options = array();
-      $save_options['default'] = t('- Select bookmark list -');
+      $save_options['default'] = t('- Select @type list -', array('@type' => variable_get('islandora_bookmark_type', 'bookmark')));
 
       foreach ($user_bookmarks as $bookmark) {
         $save_options[$bookmark->bookmarkId] = $bookmark->bookmarkName;
@@ -173,7 +175,7 @@ function islandora_bookmark_results_form(array $form, array &$form_state, $objec
       $form['islandora_bookmark_save_fieldset'] = array(
         'fieldset' => array(
           '#type' => 'fieldset',
-          '#title' => t('Bookmark'),
+          '#title' => t('@type', array('@type' => ucwords(variable_get('islandora_bookmark_type', 'bookmark')))),
           '#weight' => 0,
         ),
       );
@@ -265,8 +267,8 @@ function islandora_bookmark_results_form_submit(array $form, array &$form_state)
     }
     else {
       if ($broke_count > 0) {
-        $broken_pids = format_plural($broke_count, 'The following object !broke_pids was unable to be exported as it does not exist.',
-                       'The following objects !broke_pids were unable to be exported as they do not exist.',
+        $broken_pids = format_plural($broke_count, 'The following object was unable to be exported as it does not exist: !broke_pids.',
+                       'The following objects were unable to be exported as they do not exist: !broke_pids.',
                        array('!broke_pids' => trim($broke_pids)));
         drupal_set_message($broken_pids, 'error');
       }
@@ -305,8 +307,8 @@ function islandora_bookmark_results_form_submit(array $form, array &$form_state)
     }
     else {
       if ($broke_count > 0) {
-        $broken_pids = format_plural($broke_count, 'The following object !broke_pids was unable to be exported as it does not exist.',
-                       'The following objects !broke_pids were unable to be exported as they do not exist.',
+        $broken_pids = format_plural($broke_count, 'The following object was unable to be exported as it does not exist: !broke_pids.',
+                       'The following objects were unable to be exported as they do not exist: !broke_pids.',
                        array('!broke_pids' => trim($broke_pids)));
         drupal_set_message($broken_pids, 'error');
       }
@@ -328,8 +330,8 @@ function islandora_bookmark_results_form_submit(array $form, array &$form_state)
       }
     }
     if ($broke_count > 0) {
-      $broken_pids = format_plural($broke_count, 'The following object !broke_pids was unable to be bookmarked as it does not exist.',
-                     'The following objects !broke_pids were unable to be bookmarked as they do not exist.',
+      $broken_pids = format_plural($broke_count, 'The following object was unable to be bookmarked as it does not exist: !broke_pids.',
+                     'The following objects were unable to be bookmarked as they do not exist: !broke_pids.',
                      array('!broke_pids' => trim($broke_pids)));
       drupal_set_message($broken_pids, 'error');
     }
@@ -412,8 +414,8 @@ function islandora_bookmark_results_form_submit(array $form, array &$form_state)
     }
 
     if ($broke_count > 0) {
-      $broken_pids = format_plural($broke_count, 'The following object !broke_pids was unable to be added as it does not exist.',
-                     'The following objects !broke_pids were unable to be added as they do not exist.',
+      $broken_pids = format_plural($broke_count, 'The following object was unable to be added as it does not exist: !broke_pids.',
+                     'The following objects were unable to be added as they do not exist: !broke_pids',
                      array('!broke_pids' => trim($broke_pids)));
       drupal_set_message($broken_pids, 'error');
     }
@@ -444,8 +446,8 @@ function islandora_bookmark_results_form_submit(array $form, array &$form_state)
           $plural_skipped = '';
 
           if ($skipped_count > 0) {
-            $plural_skipped = format_plural($skipped_count, 'The object (!skipped_pids) was not added as it already exists in the bookmark list.',
-                              'The objects (!skipped_pids) were not added as they already exist in the bookmark list.',
+            $plural_skipped = format_plural($skipped_count, 'The following object was not added as it already exists in the bookmark list: !skipped_pids.',
+                              'The following objects were not added as they already exist in the bookmark list: !skipped_pids.',
                               array('!skipped_pids' => trim($skipped_pids)));
           }
           drupal_set_message(t('The @plural_add been added to @listname. @plural_skipped',
@@ -461,8 +463,8 @@ function islandora_bookmark_results_form_submit(array $form, array &$form_state)
         }
       }
       else {
-        $plural_skipped = format_plural($skipped_count, 'The pid (!skipped_pids) was not added as it already exists in !listname.',
-                          'The pids (!skipped_pids) were not added as they already exist in !listname',
+        $plural_skipped = format_plural($skipped_count, 'The following PID was not added as it already exists in !listname: !skipped_pids.',
+                          'The following PIDs (!skipped_pids) were not added as they already exist in !listname: !skipped_pids.',
                           array('!skipped_pids' => trim($skipped_pids), '!listname' => $bookmark_object->bookmarkName)
         );
         drupal_set_message($plural_skipped, 'warning');
