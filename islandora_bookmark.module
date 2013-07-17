@@ -1229,6 +1229,7 @@ function islandora_bookmark_get_export_format_options($option) {
  */
 function islandora_bookmark_get_export_options() {
   $output = module_invoke_all('islandora_bookmark_export_handler');
+  drupal_alter('islandora_bookmark_export_handler', $output);
   return $output;
 }
 
