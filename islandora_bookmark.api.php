@@ -16,6 +16,16 @@ function hook_islandora_bookmark_export_handler() {
 }
 
 /**
+ * Hook to alter the options returned for exportation.
+ *
+ * @return array
+ *   Returns an array with the name of the module and the function name to call
+ *   to handle exportation. In the form of 'module name' => 'export function'.
+ */
+function hook_islandora_bookmark_export_handler_alter(&$output) {
+}
+
+/**
  * Hook to generate markup for displaying a Fedora object within a table.
  *
  * @return array
