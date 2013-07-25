@@ -35,7 +35,7 @@ function islandora_bookmark_rss($list_id) {
   // The title of the RSS channel to be the site name or Drupal by default.
   $title = t('@site_name aggregator', array('@site_name' => variable_get('site_name', 'Drupal')));
   // The link to be the base url.
-  $link - $base_url;
+  $link = $base_url;
   // The description of the RSS channel.
   $description = t('Aggregated results of: @bookmarkName', array('@bookmarkName' => $bookmark->bookmarkName));
 
