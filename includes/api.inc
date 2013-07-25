@@ -146,8 +146,8 @@ function islandora_bookmark_get_user_shared_bookmarks() {
  * @param int $listid
  *   List ID to be searched for.
  *
- * @return PidList
- *   PidList object.
+ * @return bool|PidList
+ *   PidList object or FALSE if the list does not exist.
  */
 function islandora_bookmark_get_bookmark_by_number($listid) {
   global $user;
