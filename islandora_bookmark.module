@@ -32,6 +32,15 @@ function islandora_bookmark_menu() {
     'access callback' => 'islandora_bookmark_access',
     'access arguments' => array(2),
   );
+  $items['islandora-bookmark/listid/%/rss'] = array(
+    'title' => 'RSS Feed',
+    'type' => MENU_LOCAL_ACTION,
+    'page callback' => 'islandora_bookmark_rss',
+    'page arguments' => array(2),
+    'access callback' => 'islandora_bookmark_access',
+    'access arguments' => array(2),
+    'file' => 'includes/bookmark_rss.inc',
+  );
   $items['islandora-bookmark/add'] = array(
     'title' => 'Add',
     'type' => MENU_LOCAL_TASK,
@@ -422,6 +431,7 @@ function islandora_bookmark_generate_markup($pid, $object_url_info = NULL) {
 
   return $output;
 }
+
 
 /**
  * Themes a Fedora object.
