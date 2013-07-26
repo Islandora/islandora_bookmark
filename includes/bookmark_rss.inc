@@ -23,10 +23,14 @@ function islandora_bookmark_rss($list_id) {
   // Get all the pid belonging to that bookmark.
   $all_pids = $bookmark->pidList;
 
-  // Loop thourgh all the pids and build the formatted RSS items.
+  // Loop through all the pids and build the formatted RSS items.
   $items = NULL;
   foreach ($all_pids as $pid) {
-    $items .= islandora_bookmark_create_rss_item($pid);
+    // Load fedora object from pid.
+    $fedora_object = islandora_object_load($pid);
+    if ($fedora_object) {
+      $items .= islandora_bookmark_create_rss_item($fedora_object);
+    }
   }
 
   // Get the global base url.
@@ -53,26 +57,24 @@ function islandora_bookmark_rss($list_id) {
 /**
  * Creates an bookmark RSS item.
  *
- * @param string $pid
- *   The PID of the object to create RSS item.
+ * @param AbstractObject $object
+ *   The object to create RSS item.
  *
  * @return string
  *   The formated RSS item.
  */
-function islandora_bookmark_create_rss_item($pid) {
-  // islandora_invoke_hook_list
+function islandora_bookmark_create_rss_item(AbstractObject $object) {
+
   module_load_include('inc', 'islandora', 'includes/utilities');
-  // Load fedora object from pid.
-  $fedora_object = islandora_object_load($pid);
 
   // Create rss item array.
   $rss_item = array();
 
   // Invokes the islandora_bookmark_rss_item hook.
-  foreach (islandora_build_hook_list('islandora_bookmark_rss_item', $fedora_object->models) as $hook) {
-    $temp = module_invoke_all($hook, $fedora_object);
+  foreach (islandora_build_hook_list('islandora_bookmark_rss_item', $object->models) as $hook) {
+    $temp = module_invoke_all($hook, $object);
 
-    // If something returns then merge it with the $rss_item
+    // If something returns then merge it with the $rss_ite.
     if (!empty($temp)) {
       $rss_item = array_merge_recursive($rss_item, $temp);
     }
@@ -80,7 +82,7 @@ function islandora_bookmark_create_rss_item($pid) {
 
   // If $rss_item is empty then call the default RSS item.
   if (empty($rss_item)) {
-    $rss_item = islandora_bookmark_rss_item($fedora_object);
+    $rss_item = islandora_bookmark_rss_item($object);
   }
 
   // Return the formatted RSS item.
@@ -108,12 +110,12 @@ function islandora_bookmark_rss_item(AbstractObject $object) {
   // Create an associative array for the required elements
   // for a valid bookmark RSS item.
   $rss_item = array();
-  // The defualt title of the item will be the objects label.
+  // The default title of the item will be the objects label.
   $rss_item['title'] = $object->label;
   // The default link will be to the objects page.
   $rss_item['link'] = url('islandora/object/' . htmlspecialchars($object->id, ENT_QUOTES, 'utf-8'), array('absolute' => TRUE));
   // The default description will be No description.
-  $rss_item['description'] = 'No description';
+  $rss_item['description'] = t('No description');
 
   // Get the site name to be the value of the source.
   $rss_source = variable_get('site_name', "Default site name");

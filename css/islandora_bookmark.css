@@ -44,3 +44,13 @@ div.islandora-bookmark-error-message {
 #islandora-bookmark-detailed-form table .operations {
   width: 100px;
 }
+
+#islandora-bookmark-rss-format {
+  float: right;
+  display: block;
+  clear: both;
+}
+
+#islandora-bookmark-detailed-list {
+  clear: both;
+}
