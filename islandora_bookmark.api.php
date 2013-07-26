@@ -53,3 +53,37 @@ function hook_CMODEL_PID_islandora_bookmark_object_markup($fedora_object, $objec
  */
 function hook_islandora_bookmark_export_styles($option) {
 }
+
+/**
+ * Hook to change or add values to RSS fields.
+ *
+ * Somtimes you might want to alter fields for an rss item.
+ * 
+ * @param AbstractObject $object
+ *   The bookmarked object
+ * 
+ * @return array
+ *   Returns an array containing the additional changes to the rss item.
+ */
+function hook_islandora_bookmark_rss_item(AbstractObject $object) {
+
+  // Create an associative array for the required elements
+  // for a valid bookmark RSS item.
+  $rss_item = array();
+  // The title of the item.
+  $rss_item['title'] = 'Altered Title';;
+  // The link of the item.
+  $rss_item['link'] = 'Altered Link';
+  // The description of the item.
+  $rss_item['description'] = 'Altered description';
+
+  // Set the source attribute.
+  $rss_item['items'] = array(
+    array(
+      'key' => 'source',
+      'value' => 'source value', 'attributes' => array('url' => 'url')),
+  );
+
+  // Return the RSS item.
+  return $rss_item;
+}
