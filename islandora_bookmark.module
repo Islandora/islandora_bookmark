@@ -26,11 +26,21 @@ function islandora_bookmark_menu() {
     'weight' => 0,
   );
   $items['islandora-bookmark/listid/%'] = array(
-    'title' => 'Detailed list',
+    'title callback' => 'islandora_bookmark_list_title',
+    'title arguments' => array(2),
     'page callback' => 'islandora_bookmark_detailed_forms',
     'page arguments' => array(2),
     'access callback' => 'islandora_bookmark_access',
     'access arguments' => array(2),
+  );
+  $items['islandora-bookmark/listid/%/rss'] = array(
+    'title' => 'RSS Feed',
+    'type' => MENU_CALLBACK,
+    'page callback' => 'islandora_bookmark_rss',
+    'page arguments' => array(2),
+    'access callback' => 'islandora_bookmark_access',
+    'access arguments' => array(2),
+    'file' => 'includes/bookmark_rss.inc',
   );
   $items['islandora-bookmark/add'] = array(
     'title' => 'Add',
@@ -90,6 +100,7 @@ function islandora_bookmark_access($list_id) {
   }
   else {
     $bookmark_access = FALSE;
+
     $owner_query = db_query('SELECT listowner FROM {islandora_bookmark_list_names} WHERE listid = :listid ORDER BY listid', array(':listid' => $list_id))->fetchObject();
 
     if ($owner_query && $owner_query->listowner === $user->uid) {
@@ -423,6 +434,7 @@ function islandora_bookmark_generate_markup($pid, $object_url_info = NULL) {
   return $output;
 }
 
+
 /**
  * Themes a Fedora object.
  *
@@ -506,10 +518,24 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
     '#suffix' => '</div>',
   );
 
+  // This is the RSS icon link.
+  if (!empty($bookmark->pidList) && !$bookmark->bookmarkSession) {
+    $form['bookmark_rss'] = array(
+      '#markup' => l(theme_image(array(
+        'path' => drupal_get_path('module', 'islandora_bookmark') . '/images/rss.png',
+        'title' => t('Present Bookmark list in RSS form'),
+        'attributes' => array(),
+      )), "islandora-bookmark/listid/$bookmark->bookmarkId/rss", array('html' => TRUE)),
+      '#prefix' => '<div id="islandora-bookmark-rss-format">',
+      '#suffix' => '</div>',
+    );
+  }
   $form['bookmarks'] = array(
     'fieldset' => array(
       '#type' => 'fieldset',
-      '#title' => check_plain($bookmark->bookmarkName),
+      '#title' => 'Detailed List',
+      '#prefix' => '<div id="islandora-bookmark-detailed-list">',
+      '#suffix' => '</div>',
     ),
   );
 
@@ -1572,4 +1598,24 @@ function islandora_bookmark_islandora_solr_primary_display() {
       'description' => t('Search results as Bookmark output'),
     ),
   );
+}
+
+/**
+ * Title callback for bookmark list.
+ *
+ * Changes the drupal title to be the bookmarks title.
+ *
+ * @param string $list_id
+ *   The bookmark list id.
+ *
+ * @return string
+ *   The the bookmark name.
+ */
+function islandora_bookmark_list_title($list_id) {
+  module_load_include('inc', 'islandora_bookmark', 'includes/api');
+
+  $bookmark = islandora_bookmark_get_bookmark_by_number($list_id);
+  check_plain($bookmark->bookmarkName);
+
+  return check_plain($bookmark->bookmarkName);
 }

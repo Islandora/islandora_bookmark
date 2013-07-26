@@ -146,41 +146,44 @@ function islandora_bookmark_get_user_shared_bookmarks() {
  * @param int $listid
  *   List ID to be searched for.
  *
- * @return PidList
- *   PidList object.
+ * @return bool|PidList
+ *   PidList object or FALSE if the list does not exist.
  */
 function islandora_bookmark_get_bookmark_by_number($listid) {
   global $user;
 
   if (!preg_match('/session_/', $listid)) {
     $listresult = db_query('SELECT listname, listowner from {islandora_bookmark_list_names} WHERE listid = :listid', array(':listid' => $listid))->fetchObject();
+    if ($listresult) {
+      $userresult = db_query('SELECT uid from {islandora_bookmark_list_users} WHERE listid = :listid', array(':listid' => $listid));
 
-    $userresult = db_query('SELECT uid from {islandora_bookmark_list_users} WHERE listid = :listid', array(':listid' => $listid));
+      $userlist = array();
 
-    $userlist = array();
+      foreach ($userresult as $record) {
+        array_push($userlist, $record->uid);
+      }
 
-    foreach ($userresult as $record) {
-      array_push($userlist, $record->uid);
+      $pidresult = db_query('SELECT pidid from {islandora_bookmark_list_pids} WHERE listid = :listid', array(':listid' => $listid));
+      $pidlist = array();
+
+      foreach ($pidresult as $record) {
+        array_push($pidlist, $record->pidid);
+      }
+
+      $params = array(
+        'retrieve' => TRUE,
+        'user_id' => $user->uid,
+        'bookmark_owner' => $listresult->listowner,
+        'bookmark_name' => $listresult->listname,
+        'bookmark_id' => $listid,
+        'bookmark_users' => $userlist,
+        'bookmark_pids' => $pidlist,
+      );
+      $templist = new Bookmark($params);
     }
-
-    $pidresult = db_query('SELECT pidid from {islandora_bookmark_list_pids} WHERE listid = :listid', array(':listid' => $listid));
-    $pidlist = array();
-
-    foreach ($pidresult as $record) {
-      array_push($pidlist, $record->pidid);
+    else {
+      return FALSE;
     }
-
-    $params = array(
-      'retrieve' => TRUE,
-      'user_id' => $user->uid,
-      'bookmark_owner' => $listresult->listowner,
-      'bookmark_name' => $listresult->listname,
-      'bookmark_id' => $listid,
-      'bookmark_users' => $userlist,
-      'bookmark_pids' => $pidlist,
-    );
-    $templist = new Bookmark($params);
-
   }
   else {
     $templist = unserialize($_SESSION['islandora_bookmark'][$listid]);
