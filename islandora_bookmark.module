@@ -1619,3 +1619,12 @@ function islandora_bookmark_list_title($list_id) {
 
   return check_plain($bookmark->bookmarkName);
 }
+
+/**
+ * Implements hook_islandora_object_purged().
+ */
+function islandora_bookmark_islandora_object_purged($pid) {
+  db_delete('islandora_bookmark_list_pids')
+    ->condition('pidid', $pid)
+    ->execute();
+}
