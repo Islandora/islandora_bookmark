@@ -426,7 +426,7 @@ function islandora_bookmark_generate_markup($pid, $object_url_info = NULL) {
   }
   else {
     // Handle when we can't access a Fedora object.
-    watchdog('islandora_bookmark', "Tried to render markup for $pid, but was unable to load it.");
+    watchdog('islandora_bookmark', "Tried to render markup for @pid, but was unable to load it.", array("@pid" => $pid));
     $output = '<div class="islandora-bookmark-error-message">' . t('Unable to load object @pid.',
               array('@pid' => $pid)) . '</div>';
   }
@@ -439,12 +439,10 @@ function islandora_bookmark_generate_markup($pid, $object_url_info = NULL) {
  * Themes a Fedora object.
  *
  * @param array $object_url_info
- *   Contains information to build an anchor tag ie.
- *     array(
- *       'path' => "islandora/$pid",
- *       'params' => array(),
- *       'markup' => 'a label',
- *     );
+ *   An associative array contains information to build an anchor tag.
+ *   - path: A string containing the path/
+ *   - params: An array of paramaters to be passed.
+ *   - markup: A string containing the label for the anchor tag.
  *
  * @return array
  *   an associative array containing the output from theme
@@ -638,7 +636,7 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
 
     foreach ($export as $module_name => $export_array) {
       foreach ($export_array as $name => $export_func) {
-        $export_options[$module_name][$name] = $name;
+        $export_options[t("@module_name", array("@module_name" => $module_name))][$name] = $name;
         $form_state['islandora_bookmark_export'][$name] = $export_func;
         $export_styles[$name] = islandora_bookmark_get_export_format_options($name);
       }
