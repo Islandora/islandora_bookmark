@@ -130,6 +130,10 @@ function islandora_bookmark_get_user_shared_bookmarks() {
  */
 function islandora_bookmark_get_bookmark_by_number($listid) {
   global $user;
+
+  // The error that codesniffer was giving was Using the e flag in preg_match.
+  // This is a bug. so we will ignore it until it is fixed.
+  // https://drupal.org/node/1779020
   // @codingStandardsIgnoreStart
   if (!preg_match('/session_/', $listid)) {
     // @codingStandardsIgnoreEnd
