@@ -151,8 +151,9 @@ function islandora_bookmark_get_user_shared_bookmarks() {
  */
 function islandora_bookmark_get_bookmark_by_number($listid) {
   global $user;
-
+  // @codingStandardsIgnoreStart
   if (!preg_match('/session_/', $listid)) {
+    // @codingStandardsIgnoreEnd
     $listresult = db_query('SELECT listname, listowner from {islandora_bookmark_list_names} WHERE listid = :listid', array(':listid' => $listid))->fetchObject();
     if ($listresult) {
       $userresult = db_query('SELECT uid from {islandora_bookmark_list_users} WHERE listid = :listid', array(':listid' => $listid));
