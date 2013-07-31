@@ -28,20 +28,10 @@ function islandora_bookmark_get_user_owned_bookmarks() {
   }
 
   foreach ($listids as $key => $value) {
-    $listpids = array();
-    $listusers = array();
 
-    $pid_query = db_query('SELECT pidid FROM {islandora_bookmark_list_pids} WHERE listid = :listid', array(':listid' => $value));
+    $listpids = islandora_bookmark_list_pids_query($value);
 
-    foreach ($pid_query as $record) {
-      $listpids[] = $record->pidid;
-    }
-
-    $user_query = db_query('SELECT uid FROM {islandora_bookmark_list_users} WHERE listid = :listid', array(':listid' => $value));
-
-    foreach ($user_query as $record) {
-      $listusers[] = $record->uid;
-    }
+    $listusers = islandora_bookmark_list_users_query($value);
 
     $list_record = db_query('SELECT listname, listowner from {islandora_bookmark_list_names} WHERE listid = :listid', array(':listid' => $value))->fetchObject();
     $listid = $value;
@@ -105,20 +95,9 @@ function islandora_bookmark_get_user_shared_bookmarks() {
 
   foreach ($shared_ids as $key => $value) {
 
-    $listpids = array();
-    $listusers = array();
+    $listpids = islandora_bookmark_list_pids_query($value);
 
-    $pid_query = db_query('SELECT pidid FROM {islandora_bookmark_list_pids} WHERE listid = :listid', array(':listid' => $value));
-
-    foreach ($pid_query as $record) {
-      $listpids[] = $record->pidid;
-    }
-
-    $user_query = db_query('SELECT uid FROM {islandora_bookmark_list_users} WHERE listid = :listid', array(':listid' => $value));
-
-    foreach ($user_query as $record) {
-      $listusers[] = $record->uid;
-    }
+    $listusers = islandora_bookmark_list_users_query($value);
 
     $list_record = db_query('SELECT listname, listowner from {islandora_bookmark_list_names} WHERE listid = :listid', array(':listid' => $value))->fetchObject();
     $listid = $value;
@@ -152,7 +131,12 @@ function islandora_bookmark_get_user_shared_bookmarks() {
 function islandora_bookmark_get_bookmark_by_number($listid) {
   global $user;
 
+  // The error that codesniffer was giving was Using the e flag in preg_match.
+  // This is a bug. so we will ignore it until it is fixed.
+  // https://drupal.org/node/1779020
+  // @codingStandardsIgnoreStart
   if (!preg_match('/session_/', $listid)) {
+    // @codingStandardsIgnoreEnd
     $listresult = db_query('SELECT listname, listowner from {islandora_bookmark_list_names} WHERE listid = :listid', array(':listid' => $listid))->fetchObject();
     if ($listresult) {
       $userresult = db_query('SELECT uid from {islandora_bookmark_list_users} WHERE listid = :listid', array(':listid' => $listid));
@@ -221,4 +205,40 @@ function islandora_bookmark_get_bookmarks_visible_to_user($pid, $uid) {
     }
   }
   return $lists;
+}
+
+/**
+ * Retrieves all the pids from the bookmark list id.
+ *
+ * @param string $value
+ *   The listid.
+ *
+ * @return array
+ *   An array containing listpids.
+ */
+function islandora_bookmark_list_pids_query($value) {
+  $pid_query = db_query('SELECT pidid FROM {islandora_bookmark_list_pids} WHERE listid = :listid', array(':listid' => $value));
+  $listpids = array();
+  foreach ($pid_query as $record) {
+    $listpids[] = $record->pidid;
+  }
+  return $listpids;
+}
+
+/**
+ * Retrieves all the uids from the bookmark listid.
+ *
+ * @param string $value
+ *   The listid.
+ *
+ * @return array
+ *   An array containing user ids.
+ */
+function islandora_bookmark_list_users_query($value) {
+  $user_query = db_query('SELECT uid FROM {islandora_bookmark_list_users} WHERE listid = :listid', array(':listid' => $value));
+  $listusers = array();
+  foreach ($user_query as $record) {
+    $listusers[] = $record->uid;
+  }
+  return $listusers;
 }

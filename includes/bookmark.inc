@@ -107,7 +107,7 @@ class Bookmark {
         }
       }
       else {
-        throw new Exception(t("You do not have access to remove bookmarks from the list @name", array('@name' => $this->bookmarkName)));
+        throw new Exception(t("You do not have access to remove bookmarks from the list @bookmarkname", array("@bookmarkname" => $this->bookmarkName)));
       }
     }
     else {
@@ -134,7 +134,7 @@ class Bookmark {
         $this->pidList = array();
       }
       else {
-        throw new Exception(t("You do not have access to remove bookmarks from the list @name", array('@name' => $this->bookmarkName)));
+        throw new Exception(t("You do not have access to remove bookmarks from the list @bookmarkname", array("@bookmarkname" => $this->bookmarkName)));
       }
     }
     else {
@@ -169,7 +169,7 @@ class Bookmark {
         $this->removeUserDB($this->userId);
       }
       else {
-        throw new Exception(t("You do not have access to remove users from the list @name", array('@name' => $this->bookmarkName)));
+        throw new Exception(t("You do not have access to remove users from the list @bookmarkname", array("@bookmarkname" => $this->bookmarkName)));
       }
     }
     else {
@@ -207,7 +207,7 @@ class Bookmark {
               $this->addPidDB($value);
             }
             else {
-              throw new Exception(t("You do not have access to add bookmarks to the list @name", array('@name' => $this->bookmarkName)));
+              throw new Exception(t("You do not have access to add bookmarks from the list @bookmarkname", array("@bookmarkname" => $this->bookmarkName)));
             }
           }
           else {
@@ -240,7 +240,7 @@ class Bookmark {
             $this->addUserDB($value);
           }
           else {
-            throw new Exception(t("You do not have access to add users to the list @name", array('@name' => $this->bookmarkName)));
+            throw new Exception(t("You do not have access to add users from the list @bookmarkname", array("@bookmarkname" => $this->bookmarkName)));
           }
         }
         else {
@@ -318,7 +318,7 @@ class Bookmark {
         }
       }
       else {
-        throw new Exception(t("You do not have access to remove the list @name", array('@name' => $this->bookmarkName)));
+        throw new Exception(t("You do not have access to remove the list @bookmarkname", array("@bookmarkname" => $this->bookmarkName)));
       }
     }
     else {
