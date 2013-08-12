@@ -727,7 +727,7 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
           $row = $form_state['triggering_element']['#row'];
           $remove_user = $form_state['values']['bookmarks']['users'][$row]['user'];
           if ($remove_user == 0) {
-            $output_user = variable_get('anonymous', t('Anonymous'));
+            $output_user = variable_get('anonymous', t('Everyone'));
           }
           else {
             $output_user = user_load($remove_user)->name;
@@ -773,7 +773,7 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
           foreach ($bookmark_users as $itr => $uid) {
             $tempuser = user_load($uid);
             if ($tempuser->uid == 0) {
-              $user_output = variable_get('anonymous', t('Anonymous'));
+              $user_output = variable_get('anonymous', t('Everyone'));
             }
             else {
               $user_output = $tempuser->name;
@@ -816,7 +816,7 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
         if ($user->uid != 0) {
           $options['0'] = array(
             'uid' => 0,
-            'name' => variable_get('anonymous', 'anonymous'),
+            'name' => variable_get('anonymous', 'Everyone'),
           );
         }
         // Get all users for use in select for forms.

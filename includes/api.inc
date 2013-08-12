@@ -86,7 +86,7 @@ function islandora_bookmark_get_user_shared_bookmarks() {
   foreach ($owner_query as $record) {
     $owner_ids[] = $record->listid;
   }
-  $shared_query = db_query('SELECT listid FROM {islandora_bookmark_list_users} WHERE uid = :uid ORDER BY listid', array(':uid' => $user->uid));
+  $shared_query = db_query('SELECT listid FROM {islandora_bookmark_list_users} WHERE uid = :uid OR uid = 0 ORDER BY listid', array(':uid' => $user->uid));
 
   foreach ($shared_query as $record) {
     $shared_ids[] = $record->listid;
