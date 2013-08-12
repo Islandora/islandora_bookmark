@@ -86,7 +86,15 @@ function islandora_bookmark_get_user_shared_bookmarks() {
   foreach ($owner_query as $record) {
     $owner_ids[] = $record->listid;
   }
-  $shared_query = db_query('SELECT listid FROM {islandora_bookmark_list_users} WHERE uid = :uid ORDER BY listid', array(':uid' => $user->uid));
+
+  $args = array(':uid' => $user->uid);
+  $query = 'SELECT listid FROM {islandora_bookmark_list_users} WHERE uid = :uid ORDER BY listid';
+
+  if (variable_get('islandora_bookmark_show_bookmarks_shared_with_anonymous', FALSE)) {
+    $args[':anonymous_pid'] = 0;
+    $query = 'SELECT listid FROM {islandora_bookmark_list_users} WHERE uid = :uid OR uid = :anonymous_pid ORDER BY listid';
+  }
+  $shared_query = db_query($query, $args);
 
   foreach ($shared_query as $record) {
     $shared_ids[] = $record->listid;
