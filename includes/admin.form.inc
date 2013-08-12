@@ -39,6 +39,12 @@ function islandora_bookmark_admin_settings(array $form, array &$form_state) {
       '#element_validate' => array('element_validate_integer_positive'),
       '#size' => 4,
     ),
+    'show_bookmarks_shared_with_anonymous' => array(
+      '#type' => 'checkbox',
+      '#title' => t('Show bookmarks shared with anonymous'),
+      '#description' => t('Bookmarks shared with anonymous users can be viewed by everyone'),
+      '#default_value' => variable_get('islandora_bookmark_show_bookmarks_shared_with_anonymous', FALSE),
+    ),
     'submit' => array(
       '#type' => 'submit',
       '#value' => t('Save configuration'),
@@ -68,12 +74,14 @@ function islandora_bookmark_admin_settings_submit(array $form, array &$form_stat
       variable_set('islandora_bookmark_overview_page_elements', $form_state['values']['overview_page_elements']);
       variable_set('islandora_bookmark_detailed_page_elements', $form_state['values']['detailed_page_elements']);
       variable_set('islandora_bookmark_type', $form_state['values']['list_type']);
+      variable_set('islandora_bookmark_show_bookmarks_shared_with_anonymous', $form_state['values']['show_bookmarks_shared_with_anonymous']);
       break;
 
     case 'edit-reset':
       variable_del('islandora_bookmark_overview_page_elements');
       variable_del('islandora_bookmark_detailed_page_elements');
       variable_del('islandora_bookmark_type');
+      variable_del('islandora_bookmark_show_bookmarks_shared_with_anonymous');
       break;
   }
 }
