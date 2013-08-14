@@ -70,7 +70,7 @@ function islandora_bookmark_results_form(array $form, array &$form_state, $objec
         '#tag' => 'meta',
         '#attributes' => array(
           'http-equiv' => 'refresh',
-          'content' => '1.0;' . url(MENU_CITATION_EXPORTER_EXPORT, array('absolute' => TRUE)),
+          'content' => '1.0;' . url(CITATION_EXPORTER_EXPORT_MENU, array('absolute' => TRUE)),
         ),
       );
       drupal_add_html_head($citation_export_head, 'citation_exporter_head');
