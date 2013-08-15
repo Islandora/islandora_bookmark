@@ -96,9 +96,8 @@ function islandora_bookmark_access($list_id) {
   // The error that codesniffer was giving was Using the e flag in preg_match.
   // This is a bug. so we will ignore it until it is fixed.
   // https://drupal.org/node/1779020
-  // @codingStandardsIgnoreStart
   preg_match('/session_/', $list_id, $match);
-  // @codingStandardsIgnoreEnd
+
   if ($match) {
     $bookmark_access = TRUE;
   }
@@ -114,6 +113,10 @@ function islandora_bookmark_access($list_id) {
       $user_query = db_query('SELECT uid FROM {islandora_bookmark_list_users} WHERE listid = :listid', array(':listid' => $list_id));
       foreach ($user_query as $record) {
         if ($record->uid == $user->uid) {
+          $bookmark_access = TRUE;
+          break;
+        }
+        elseif ($record->uid == 0) {
           $bookmark_access = TRUE;
           break;
         }
