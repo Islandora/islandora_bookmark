@@ -140,9 +140,6 @@ function islandora_bookmark_access($list_id) {
 function islandora_bookmark_delete_bookmark_access($list_id) {
   global $user;
 
-  // The error that codesniffer was giving was Using the e flag in preg_match.
-  // This is a bug. so we will ignore it until it is fixed.
-  // https://drupal.org/node/1779020
   preg_match('/session_/', $list_id, $match);
 
   if ($match) {
@@ -896,12 +893,7 @@ function islandora_bookmark_detailed_form_submit(array $form, array &$form_state
   $form_state['redirect'] = array(request_path(), array('query' => $queries));
 
   foreach ($_POST as $key => $value) {
-    // The error that codesniffer was giving was Using the e flag in preg_match.
-    // This is a bug. so we will ignore it until it is fixed.
-    // https://drupal.org/node/1779020
-    // @codingStandardsIgnoreStart
     preg_match('/remove_pid_(.*)/', $key, $match);
-    // @codingStandardsIgnoreEnd
     if ($match) {
       break;
     }
