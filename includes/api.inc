@@ -134,9 +134,7 @@ function islandora_bookmark_get_bookmark_by_number($listid) {
   // The error that codesniffer was giving was Using the e flag in preg_match.
   // This is a bug. so we will ignore it until it is fixed.
   // https://drupal.org/node/1779020
-  // @codingStandardsIgnoreStart
   if (!preg_match('/session_/', $listid)) {
-    // @codingStandardsIgnoreEnd
     $listresult = db_query('SELECT listname, listowner from {islandora_bookmark_list_names} WHERE listid = :listid', array(':listid' => $listid))->fetchObject();
     if ($listresult) {
       $userresult = db_query('SELECT uid from {islandora_bookmark_list_users} WHERE listid = :listid', array(':listid' => $listid));

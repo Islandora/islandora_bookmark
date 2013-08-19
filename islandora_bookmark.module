@@ -143,9 +143,8 @@ function islandora_bookmark_delete_bookmark_access($list_id) {
   // The error that codesniffer was giving was Using the e flag in preg_match.
   // This is a bug. so we will ignore it until it is fixed.
   // https://drupal.org/node/1779020
-  // @codingStandardsIgnoreStart
   preg_match('/session_/', $list_id, $match);
-  // @codingStandardsIgnoreEnd
+
   if ($match) {
     $bookmark_access = TRUE;
   }
