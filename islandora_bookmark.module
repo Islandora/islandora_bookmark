@@ -93,9 +93,6 @@ function islandora_bookmark_menu() {
 function islandora_bookmark_access($list_id) {
   global $user;
 
-  // The error that codesniffer was giving was Using the e flag in preg_match.
-  // This is a bug. so we will ignore it until it is fixed.
-  // https://drupal.org/node/1779020
   preg_match('/session_/', $list_id, $match);
 
   if ($match) {
