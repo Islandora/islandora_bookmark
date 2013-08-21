@@ -93,12 +93,8 @@ function islandora_bookmark_menu() {
 function islandora_bookmark_access($list_id) {
   global $user;
 
-  // The error that codesniffer was giving was Using the e flag in preg_match.
-  // This is a bug. so we will ignore it until it is fixed.
-  // https://drupal.org/node/1779020
-  // @codingStandardsIgnoreStart
   preg_match('/session_/', $list_id, $match);
-  // @codingStandardsIgnoreEnd
+
   if ($match) {
     $bookmark_access = TRUE;
   }
@@ -114,6 +110,10 @@ function islandora_bookmark_access($list_id) {
       $user_query = db_query('SELECT uid FROM {islandora_bookmark_list_users} WHERE listid = :listid', array(':listid' => $list_id));
       foreach ($user_query as $record) {
         if ($record->uid == $user->uid) {
+          $bookmark_access = TRUE;
+          break;
+        }
+        elseif ($record->uid == 0) {
           $bookmark_access = TRUE;
           break;
         }
@@ -137,12 +137,8 @@ function islandora_bookmark_access($list_id) {
 function islandora_bookmark_delete_bookmark_access($list_id) {
   global $user;
 
-  // The error that codesniffer was giving was Using the e flag in preg_match.
-  // This is a bug. so we will ignore it until it is fixed.
-  // https://drupal.org/node/1779020
-  // @codingStandardsIgnoreStart
   preg_match('/session_/', $list_id, $match);
-  // @codingStandardsIgnoreEnd
+
   if ($match) {
     $bookmark_access = TRUE;
   }
@@ -701,7 +697,7 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
           $add_user = $form_state['input']['bookmarks']['users']['listusers'];
           if (drupal_strlen($add_user)) {
             if ($add_user == 0) {
-              $output_user = variable_get('anonymous', t('Anonymous'));
+              $output_user = t('Everyone');
             }
             else {
               $output_user = user_load($add_user)->name;
@@ -727,7 +723,7 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
           $row = $form_state['triggering_element']['#row'];
           $remove_user = $form_state['values']['bookmarks']['users'][$row]['user'];
           if ($remove_user == 0) {
-            $output_user = variable_get('anonymous', t('Anonymous'));
+            $output_user = t('Everyone');
           }
           else {
             $output_user = user_load($remove_user)->name;
@@ -773,7 +769,7 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
           foreach ($bookmark_users as $itr => $uid) {
             $tempuser = user_load($uid);
             if ($tempuser->uid == 0) {
-              $user_output = variable_get('anonymous', t('Anonymous'));
+              $user_output = t('Everyone');
             }
             else {
               $user_output = $tempuser->name;
@@ -816,7 +812,7 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
         if ($user->uid != 0) {
           $options['0'] = array(
             'uid' => 0,
-            'name' => variable_get('anonymous', 'anonymous'),
+            'name' => t('Everyone'),
           );
         }
         // Get all users for use in select for forms.
@@ -826,7 +822,7 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
           if ($record->uid != $user->uid) {
             $resultname = $record->name;
             if ($record->uid == 0) {
-              $resultname = variable_get('anonymous', t('Anonymous'));
+              $resultname = t('Everyone');
             }
             $options[$record->uid] = array(
               'uid' => $record->uid,
@@ -894,12 +890,7 @@ function islandora_bookmark_detailed_form_submit(array $form, array &$form_state
   $form_state['redirect'] = array(request_path(), array('query' => $queries));
 
   foreach ($_POST as $key => $value) {
-    // The error that codesniffer was giving was Using the e flag in preg_match.
-    // This is a bug. so we will ignore it until it is fixed.
-    // https://drupal.org/node/1779020
-    // @codingStandardsIgnoreStart
     preg_match('/remove_pid_(.*)/', $key, $match);
-    // @codingStandardsIgnoreEnd
     if ($match) {
       break;
     }
@@ -1430,7 +1421,7 @@ function islandora_bookmark_form_overview_table(array $bookmark_objs) {
   foreach ($bookmark_objs as $bookmark) {
     $owner = user_load($bookmark->bookmarkOwner);
     if ($bookmark->bookmarkOwner == 0) {
-      $owner_output = variable_get('anonymous', t('Anonymous'));
+      $owner_output = t('Everyone');
     }
     else {
       $owner_output = $owner->name;
