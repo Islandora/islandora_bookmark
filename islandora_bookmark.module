@@ -697,7 +697,7 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
           $add_user = $form_state['input']['bookmarks']['users']['listusers'];
           if (drupal_strlen($add_user)) {
             if ($add_user == 0) {
-              $output_user = variable_get('anonymous', t('Anonymous'));
+              $output_user = t('Everyone');
             }
             else {
               $output_user = user_load($add_user)->name;
@@ -822,7 +822,7 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
           if ($record->uid != $user->uid) {
             $resultname = $record->name;
             if ($record->uid == 0) {
-              $resultname = variable_get('anonymous', t('Anonymous'));
+              $resultname = t('Everyone');
             }
             $options[$record->uid] = array(
               'uid' => $record->uid,
@@ -1421,7 +1421,7 @@ function islandora_bookmark_form_overview_table(array $bookmark_objs) {
   foreach ($bookmark_objs as $bookmark) {
     $owner = user_load($bookmark->bookmarkOwner);
     if ($bookmark->bookmarkOwner == 0) {
-      $owner_output = variable_get('anonymous', t('Anonymous'));
+      $owner_output = t('Everyone');
     }
     else {
       $owner_output = $owner->name;
