@@ -89,3 +89,4 @@ function islandora_bookmark_update_7100(&$sandbox) {
     'default' => 'bookmark',
   ));
 }
+
