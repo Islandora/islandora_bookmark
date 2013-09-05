@@ -65,9 +65,27 @@ function islandora_bookmark_schema() {
         'type' => 'int',
         'length' => 11,
       ),
+      'type' => array(
+        'description' => 'The type of list which we are adding.',
+        'type' => 'varchar',
+        'length' => 255,
+        'default' => 'bookmark',
+      )
     ),
     'primary key' => array('listid'),
   );
 
   return $schema;
+}
+
+/**
+ * Adds a new field to bookmarks so we can define different types of lists.
+ */
+function islandora_bookmark_update_7100(&$sandbox) {
+  db_add_field('islandora_bookmark_list_names', 'type', array(
+    'description' => 'The type of list which we are adding.',
+    'type' => 'varchar',
+    'length' => 255,
+    'default' => 'bookmark',
+  ));
 }
