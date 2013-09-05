@@ -70,7 +70,7 @@ function islandora_bookmark_schema() {
         'type' => 'varchar',
         'length' => 255,
         'default' => 'bookmark',
-      )
+      ),
     ),
     'primary key' => array('listid'),
   );
@@ -89,4 +89,3 @@ function islandora_bookmark_update_7100(&$sandbox) {
     'default' => 'bookmark',
   ));
 }
-
