@@ -6,38 +6,77 @@
  */
 
 /**
+ * Interface defining the base operations required to implement a backend.
+ */
+interface BookmarkInterface {
+  /**
+   * Adds the specified PID to the given list.
+   *
+   * @param string $pid
+   *   The PID of an object.
+   */
+  public function addPid($pid);
+
+  /**
+   * Get PIDs associated with this list.
+   *
+   * @return array
+   *   An array of string, each representing an ID in a list.
+   */
+  public function getPids($offset = 0, $limit = -1);
+
+  /**
+   * Removes the specified PID from the given list.
+   *
+   * @param string $pid
+   *   The PID of an object.
+   */
+  public function removePid($pid);
+
+  /**
+   * Shares a list with the given user.
+   *
+   * @param int $user
+   *   A user ID.
+   */
+  public function addUser($user);
+
+  /**
+   * Get a list of all the users associated with a list.
+   *
+   * @return array
+   *   An array of integers, representing user IDs.
+   */
+  public function getUsers();
+
+  /**
+   * Removes the given user from the object.
+   *
+   * @param int $user
+   *   A user ID.
+   */
+  public function removeUser($user);
+
+  /**
+   * Delete the given list.
+   *
+   * Removes the list from the backend; attempting to get the same list again
+   * should fail.
+   */
+  public function delete();
+}
+
+/**
  * Class that defines a Bookmark object. A Bookmark object needs only to be
  * constructed such that it contains a listname and listid for uniqueness.
  */
-class Bookmark {
-  /**
-   * The list of users who belong to this object.
-   *
-   * @var array
-   */
-  public $userList = array();
-
-  /**
-   * The list of pids that belong to this object.
-   *
-   * @var array
-   */
-  public $pidList = array();
-
+abstract class Bookmark implements BookmarkInterface {
   /**
    * The name of the object.
    *
    * @var string
    */
   public $bookmarkName;
-
-  /**
-   * The unique ID of the object. This is generated through the database or
-   * explicity assigned when adding objects to the session.
-   *
-   * @var integer
-   */
-  public $bookmarkId;
 
   /**
    * The owner of the object.
@@ -47,333 +86,167 @@ class Bookmark {
   public $bookmarkOwner;
 
   /**
-   * The user id of the current user accessing the object.
+   * The ID of the given list.
    *
-   * @var integer
+   * @var mixed
    */
-  public $userId;
-
-  /**
-   * Whether the object is created or retrieved through the session.
-   *
-   * @var boolean
-   */
-  public $bookmarkSession = FALSE;
+  protected $bookmarkId;
 
   /**
    * Constructor for the Bookmark object.
    */
-  public function __construct($params = array()) {
-    $this->userId = $params['user_id'];
-    $this->userList = $params['bookmark_users'];
-
-    if (!empty($params['bookmark_session'])) {
-      $this->bookmarkSession = $params['bookmark_session'];
-    }
-
-    if (!empty($params['bookmark_pids'])) {
-      $this->pidList = $params['bookmark_pids'];
-    }
-
-    if (!empty($params['bookmark_name'])) {
-      $this->bookmarkName = $params['bookmark_name'];
-    }
-
-    if (!empty($params['bookmark_id'])) {
-      $this->bookmarkId = $params['bookmark_id'];
-    }
-
-    if (!$params['retrieve']) {
-      $this->createList();
-    }
-    else {
-      $this->bookmarkOwner = $params['bookmark_owner'];
-    }
+  public function __construct($id, $name, $owner) {
+    $this->bookmarkId = $id;
+    $this->bookmarkName = $name;
+    $this->bookmarkOwner = $owner;
   }
 
   /**
-   * Removes the given pids from the object and from the database or session.
+   * Accessor for the list ID.
+   *
+   * @return mixed
+   *   The value of $this->bookmarkId.
+   */
+  public function getId() {
+    return $this->bookmarkId;
+  }
+
+  /**
+   * Get the given (existing) list.
+   *
+   * @param mixed $id
+   *   The ID of the list to attempt to load.
+   * @param bool $force_session_attempt
+   *   Force examination of the session, to handle the hook_user_login() stuff.
+   *
+   * @return Bookmark|NULL
+   *   Returns either an instantiated Bookmark object if the list exists, or
+   *   NULL if we could not get it.
+   */
+  public static function getList($id, $force_session_attempt = FALSE) {
+    global $user;
+
+    $bookmark = NULL;
+    if ($user->uid === 0 || $force_session_attempt) {
+      $bookmark = BookmarkSession::getList($id, TRUE);
+    }
+
+    if ($bookmark === NULL) {
+      // Pass off to BookmarkDatabase.
+      $bookmark = BookmarkDatabase::getList($id, FALSE);
+    }
+
+    return $bookmark;
+  }
+
+  /**
+   * Get the number of PIDs in the current list.
+   *
+   * Individual backends could probably do this more efficiently, so feel free
+   * to override.
+   *
+   * @return int
+   *   An integer representing the number of items in the current list.
+   */
+  public function getPidCount() {
+    return count($this->getPids());
+  }
+
+  /**
+   * Remove multiple PIDs from the list.
+   *
+   * Individual backends could probably do this more efficiently, so feel free
+   * to override.
    *
    * @param array $pids
    *   An array of pids.
    */
   public function removePids($pids) {
-    $this->pidList = array_diff($this->pidList, $pids);
-
-    if (!$this->bookmarkSession) {
-      if ($this->managementAccess()) {
-        foreach ($pids as $value) {
-          $this->removePidDB($value);
-        }
-      }
-      else {
-        throw new Exception(t("You do not have access to remove bookmarks from the list @bookmarkname", array("@bookmarkname" => $this->bookmarkName)));
-      }
-    }
-    else {
-      $superserial = unserialize($_SESSION['islandora_bookmark'][$this->bookmarkId]);
-
-      foreach ($superserial->pidList as $key => $value) {
-        if (in_array($value, $pids)) {
-          unset($superserial->pidList[$key]);
-          $_SESSION['islandora_bookmark'][$this->bookmarkId] = serialize($superserial);
-        }
-      }
+    foreach ($pids as $pid) {
+      $this->removePid($pid);
     }
   }
 
   /**
-   * Remove all pids from the object and either the database or session.
+   * Remove all PIDs from the list.
+   *
+   * Individual backends could probably do this more efficiently, so feel free
+   * to override.
    */
   public function removeAllPids() {
-    if (!$this->bookmarkSession) {
-      if ($this->managementAccess()) {
-        foreach ($this->pidList as $value) {
-          $this->removePidDB($value);
-        }
-        $this->pidList = array();
-      }
-      else {
-        throw new Exception(t("You do not have access to remove bookmarks from the list @bookmarkname", array("@bookmarkname" => $this->bookmarkName)));
-      }
-    }
-    else {
-      $superserial = unserialize($_SESSION['islandora_bookmark'][$this->bookmarkId]);
-      $superserial->pidList = array();
-      $_SESSION['islandora_bookmark'][$this->bookmarkId] = serialize($superserial);
-    }
+    $this->removePids($this->getPids());
   }
 
   /**
-   * Removes the given users from the object and either the database or session.
+   * Remove multiple users from the list.
    *
-   * @global type $user
+   * Individual backends could probably do this more efficiently, so feel free
+   * to override.
    *
    * @param array $users
-   *   An array of users.
+   *   An array of integers, each representing a user ID.
    */
   public function removeUsers($users) {
-    global $user;
-    $this->userList = array_diff($this->userList, $users);
-    if (!$this->bookmarkSession) {
-      if ($this->managementAccess()) {
-        if (in_array($this->bookmarkOwner, $users)) {
-          $this->removeList();
-          return;
-        }
-        foreach ($users as $value) {
-          $this->removeUserDB($value);
-        }
-      }
-      elseif (in_array($this->userId, $users)) {
-        $this->removeUserDB($this->userId);
-      }
-      else {
-        throw new Exception(t("You do not have access to remove users from the list @bookmarkname", array("@bookmarkname" => $this->bookmarkName)));
-      }
-    }
-    else {
-      $superserial = unserialize($_SESSION['islandora_bookmark'][$this->bookmarkId]);
-
-      foreach ($superserial->userList as $key => $value) {
-        if (in_array($this->bookmarkOwner, $users)) {
-          $this->removeList();
-          return;
-        }
-        if (in_array($value, $users)) {
-          unset($superserial->userList[$key]);
-          $_SESSION['islandora_bookmark'][$this->bookmarkId] = serialize($superserial);
-        }
-      }
+    foreach ($users as $user) {
+      $this->removeUser($user);
     }
   }
 
   /**
    * Adds the specified pids to the object and either the database or session.
    *
-   * @param array $pids
-   *   An array of pids.
+   * Individual backends could probably do this more efficiently, so feel free
+   * to override.
    *
-   * @throws Exception
+   * @param array $pids
+   *   An array of strings, representing object PIDs.
    */
   public function addPids($pids) {
-    foreach ($pids as $key => $value) {
-      if (islandora_object_load($value)) {
-        if (!in_array($value, $this->pidList)) {
-          array_push($this->pidList, $value);
-
-          if (!$this->bookmarkSession) {
-            if ($this->managementAccess()) {
-              $this->addPidDB($value);
-            }
-            else {
-              throw new Exception(t("You do not have access to add bookmarks from the list @bookmarkname", array("@bookmarkname" => $this->bookmarkName)));
-            }
-          }
-          else {
-            $superserial = unserialize($_SESSION['islandora_bookmark'][$this->bookmarkId]);
-            $superserial->pidList[] = $value;
-            $_SESSION['islandora_bookmark'][$this->bookmarkId] = serialize($superserial);
-          }
-        }
-      }
-      else {
-        throw new Exception(t("Could not bookmark '%value' to '%bookmark' as the object doesn't exist.", array(
-              '%value' => $value, '%bookmark' => $this->bookmarkName)));
-      }
+    $pids = array_filter($pids, 'islandora_object_load');
+    foreach ($pids as $pid) {
+      $this->addPid($pid);
     }
   }
 
   /**
    * Adds the specified users to the object and either the database or session.
    *
+   * Individual backends could probably do this more efficiently, so feel free
+   * to override.
+   *
    * @param array $users
-   *   An array of users.
+   *   An array of integers, representings user IDs.
    */
   public function addUsers($users) {
-    foreach ($users as $key => $value) {
-      if (!in_array($value, $this->userList)) {
-        array_push($this->userList, $value);
-
-        if (!$this->bookmarkSession) {
-          if ($this->managementAccess()) {
-            $this->addUserDB($value);
-          }
-          else {
-            throw new Exception(t("You do not have access to add users from the list @bookmarkname", array("@bookmarkname" => $this->bookmarkName)));
-          }
-        }
-        else {
-          $superserial = unserialize($_SESSION['islandora_bookmark'][$this->bookmarkId]);
-          $superserial->userList[] = $value;
-          $_SESSION['islandora_bookmark'][$this->bookmarkId] = serialize($superserial);
-        }
-      }
+    foreach ($users as $user) {
+      $this->addUser($user);
     }
   }
 
   /**
-   * Inserts a record into the database or adds the object to the session.
+   * Create a new list for the current user.
+   *
+   * @param string $name
+   *   A name for the newly created list.
    */
-  public function createList() {
-    $this->bookmarkOwner = $this->userId;
+  public static function createNewList($name) {
+    global $user;
 
-    if (!$this->bookmarkSession) {
-      $fields = array(
-        'listname' => $this->bookmarkName,
-        'listowner' => $this->userId,
-      );
-      $list_id = db_insert('islandora_bookmark_list_names')->fields($fields)->execute();
-
-      $this->bookmarkId = $list_id;
-
-      foreach ($this->userList as $key => $value) {
-        $fields = array(
-          'uid' => $value,
-          'listid' => $this->bookmarkId,
-        );
-        db_insert('islandora_bookmark_list_users')->fields($fields)->execute();
-      }
-      foreach ($this->pidList as $key => $value) {
-        $fields = array(
-          'listid' => $this->bookmarkId,
-          'pidid' => $value,
-        );
-        db_insert('islandora_bookmark_list_pids')->fields($fields)->execute();
-      }
+    if ($user->uid === 0) {
+      return BookmarkSession::createNewList($name);
     }
     else {
-      // Add to session.
-      if (isset($_SESSION['islandora_bookmark'])) {
-        $index = count($_SESSION['islandora_bookmark']);
-      }
-      else {
-        $index = 0;
-      }
-      $this->bookmarkId = 'session_' . $index;
-      $_SESSION['islandora_bookmark'][$this->bookmarkId] = serialize($this);
+      return BookmarkDatabase::createNewList($name);
     }
   }
 
   /**
-   * Removes the record from the database or the object from the session.
+   * Removes the list from the backend.
+   *
+   * @deprecated Just here to conform with the old API.
    */
   public function removeList() {
-    if (!$this->bookmarkSession) {
-      if ($this->managementAccess()) {
-        db_delete('islandora_bookmark_list_names')
-          ->condition('listid', $this->bookmarkId)
-          ->execute();
-
-        foreach ($this->userList as $key => $value) {
-          db_delete('islandora_bookmark_list_users')
-            ->condition('listid', $this->bookmarkId)
-            ->execute();
-        }
-
-        foreach ($this->pidList as $key => $value) {
-          db_delete('islandora_bookmark_list_pids')
-            ->condition('listid', $this->bookmarkId)
-            ->execute();
-        }
-      }
-      else {
-        throw new Exception(t("You do not have access to remove the list @bookmarkname", array("@bookmarkname" => $this->bookmarkName)));
-      }
-    }
-    else {
-      unset($_SESSION['islandora_bookmark'][$this->bookmarkId]);
-    }
-  }
-
-  /**
-   * Removes the specified user from the object's entry in the database.
-   *
-   * @param int $user_delete
-   *   The user to be removed.
-   */
-  protected function removeUserDB($user_delete) {
-    $and = db_and()->condition('uid', $user_delete)->condition('listid', $this->bookmarkId);
-    db_delete('islandora_bookmark_list_users')->condition($and)->execute();
-  }
-
-  /**
-   * Adds the specified user to the object's entry in the database.
-   *
-   * @param int $user_add
-   *   The user to be added.
-   */
-  protected function addUserDB($user_add) {
-    $fields = array(
-      'uid' => $user_add,
-      'listid' => $this->bookmarkId,
-    );
-    db_insert('islandora_bookmark_list_users')->fields($fields)->execute();
-  }
-
-  /**
-   * Removes the specified pid from the object's entry in the database.
-   *
-   * @param string $pid
-   *   The pid to be removed.
-   */
-  protected function removePidDB($pid) {
-    $and = db_and()->condition('pidid', $pid)->condition('listid', $this->bookmarkId);
-    db_delete('islandora_bookmark_list_pids')->condition($and)->execute();
-  }
-
-  /**
-   * Add the specified pid to the object's entry in the database.
-   *
-   * @param string $pid
-   *   The user to be added.
-   */
-  protected function addPidDB($pid) {
-    $fields = array(
-      'listid' => $this->bookmarkId,
-      'pidid' => $pid,
-    );
-    db_insert('islandora_bookmark_list_pids')->fields($fields)->execute();
+    $this->delete();
   }
 
   /**
@@ -384,17 +257,6 @@ class Bookmark {
    */
   public function changeListName($name) {
     $this->bookmarkName = $name;
-    if (!$this->bookmarkSession) {
-      db_update('islandora_bookmark_list_names')
-        ->fields(array(
-            'listname' => $name,
-          ))
-        ->condition('listid', $this->bookmarkId)
-        ->execute();
-    }
-    else {
-      $_SESSION['islandora_bookmark'][$this->bookmarkId] = serialize($this);
-    }
   }
 
   /**
@@ -404,7 +266,8 @@ class Bookmark {
    *   TRUE if they can execute management functions, FALSE otherwise.
    */
   public function managementAccess() {
-    if ($this->userId === $this->bookmarkOwner) {
+    global $user;
+    if ($user->uid === $this->bookmarkOwner) {
       return TRUE;
     }
     else {

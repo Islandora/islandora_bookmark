@@ -235,7 +235,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
       ));
 
       foreach ($user_bookmarks as $bookmark) {
-        $save_options[$bookmark->bookmarkId] = $bookmark->bookmarkName;
+        $save_options[$bookmark->getId()] = $bookmark->bookmarkName;
       }
 
       $group = array(
@@ -429,8 +429,8 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
     module_load_include('inc', 'islandora_bookmark', 'includes/api');
     $bookmark_object = islandora_bookmark_get_bookmark_by_number($key);
 
-    $pids_to_add = array_diff($pids, $bookmark_object->pidList);
-    $skipped_pids = array_intersect($pids, $bookmark_object->pidList);
+    $pids_to_add = array_diff($pids, $bookmark_object->getPids());
+    $skipped_pids = array_intersect($pids, $bookmark_object->getPids());
 
     if (count($pids_to_add) > 0) {
       try {
