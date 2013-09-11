@@ -100,7 +100,7 @@ function hook_islandora_bookmark_rss_item(AbstractObject $object) {
  *   "islandora_bookmark_list_names" to a class to use to interact with the
  *   given list.
  */
-function hook_islandora_bookmark_list_names() {
+function hook_islandora_bookmark_database_types() {
   return array(
     'my_type' => 'my_awesome_bookmark_class',
   );
