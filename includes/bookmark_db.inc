@@ -25,6 +25,7 @@ class BookmarkDatabase extends Bookmark {
    */
   public function __construct($list_id) {
     parent::__construct($list_id, NULL, NULL);
+    $this->isPersistent = TRUE;
 
     foreach (array_keys($this->magic_map) as $for_magic) {
       unset($this->$for_magic);

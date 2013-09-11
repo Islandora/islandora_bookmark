@@ -93,6 +93,13 @@ abstract class Bookmark implements BookmarkInterface {
   protected $bookmarkId;
 
   /**
+   * Flag whether or not the given backend is persistent.
+   *
+   * @var bool
+   */
+  protected $isPersistent;
+
+  /**
    * Constructor for the Bookmark object.
    */
   public function __construct($id, $name, $owner) {
@@ -109,6 +116,16 @@ abstract class Bookmark implements BookmarkInterface {
    */
   public function getId() {
     return $this->bookmarkId;
+  }
+
+  /**
+   * Accessor for the persistence.
+   *
+   * @return mixed
+   *   The value of $this->isPersistent.
+   */
+  public function getIsPersistent() {
+    return $this->isPersistent;
   }
 
   /**

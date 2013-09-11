@@ -39,6 +39,7 @@ class BookmarkSession extends Bookmark {
     global $user;
     parent::__construct(static::getKey($name), $name, $user->uid);
     $this->pidList = array();
+    $this->isPersistent = FALSE;
   }
 
   /**

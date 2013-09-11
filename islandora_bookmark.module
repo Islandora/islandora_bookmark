@@ -514,7 +514,7 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
   );
 
   // This is the RSS icon link.
-  if (!$bookmark instanceof BookmarkSession && $bookmark->getPidCount() > 0) {
+  if ($bookmark->getIsPersistent() && $bookmark->getPidCount() > 0) {
     $id = $bookmark->getId();
     $form['bookmark_rss'] = array(
       '#markup' => l(theme_image(array(
