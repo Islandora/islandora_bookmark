@@ -83,7 +83,6 @@ class BookmarkSession extends Bookmark {
 
     $list_id = static::getKey($name);
 
-    unset($_SESSION['islandora_bookmark']);
     $_SESSION['islandora_bookmark'][$list_id] = new static($name);
 
     return static::getList($list_id);
