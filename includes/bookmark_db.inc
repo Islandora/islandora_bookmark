@@ -186,13 +186,13 @@ class BookmarkDatabase extends Bookmark {
         ->condition('listid', $this->bookmarkId)
         ->execute();
 
-      foreach ($this->userList as $key => $value) {
+      foreach ($this->getUsers() as $key => $value) {
         db_delete('islandora_bookmark_list_users')
           ->condition('listid', $this->bookmarkId)
           ->execute();
       }
 
-      foreach ($this->pidList as $key => $value) {
+      foreach ($this->getPids() as $key => $value) {
         db_delete('islandora_bookmark_list_pids')
           ->condition('listid', $this->bookmarkId)
           ->execute();

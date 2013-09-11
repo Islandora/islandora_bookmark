@@ -244,16 +244,11 @@ function islandora_bookmark_theme() {
  */
 function islandora_bookmark_user_login(&$edit, $account) {
   if (!empty($_SESSION['islandora_bookmark'])) {
-    foreach ($_SESSION['islandora_bookmark'] as $key => $value) {
-      $bookmark_session = $value;
-      $anon_index = array_search(0, $bookmark_session->getUsers(), TRUE);
-      // Replace the anon who's logged in with their associated uid.
-      $bookmark_session->userId = $account->uid;
-      $bookmark_session->userList[$anon_index] = $account->uid;
-      $bookmark_session->bookmarkSession = FALSE;
-      $bookmark_session->createList();
-      unset($_SESSION['islandora_bookmark'][$key]);
+    foreach ($_SESSION['islandora_bookmark'] as $bookmark_session) {
+      $persistent_bookmark = BookmarkDatabase::createNewList($bookmark_session->bookmarkName, 'bookmark', $account);
+      $persistent_bookmark->addPids($bookmark_session->getPids());
     }
+    unset($_SESSION['islandora_bookmark']);
   }
 }
 
@@ -763,8 +758,8 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
             '#markup' => '<h3>' . t('Shared with') . ':</h3>',
           );
           // Remove the user from the populated shared users.
-          $key = array_search($user->uid, $bookmark->userList);
-          $bookmark_users = $bookmark->userList;
+          $bookmark_users = $bookmark->getUsers();
+          $key = array_search($user->uid, $bookmark_users);
           unset($bookmark_users[$key]);
 
           foreach ($bookmark_users as $itr => $uid) {
@@ -897,7 +892,7 @@ function islandora_bookmark_detailed_form_submit(array $form, array &$form_state
   }
 
   if ($match) {
-    $bookmark = $form_state['bookmark_object'];
+    $bookmark = Bookmark::getList($form_state['build_info']['args'][0]);
     $bookmark->removePids(array($match[1]));
     $removed_object = islandora_object_load($match[1]);
 
