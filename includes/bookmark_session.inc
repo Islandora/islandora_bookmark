@@ -13,7 +13,7 @@ class BookmarkSession extends Bookmark {
   /**
    * Place to store the list of keys in the session.
    *
-   * @var
+   * @var array
    */
   protected $pidList;
 
@@ -43,17 +43,17 @@ class BookmarkSession extends Bookmark {
   }
 
   /**
-   * {@inheritdoc}
+   * Inherits.
    */
   public static function getList($id) {
-    if(isset($_SESSION['islandora_bookmark'][$id])) {
+    if (isset($_SESSION['islandora_bookmark'][$id])) {
       return $_SESSION['islandora_bookmark'][$id];
     }
     return NULL;
   }
 
   /**
-   * {@inheritdoc}
+   * Inherits.
    */
   public function getPids($offset = 0, $limit = -1) {
     if ($limit > 0) {
@@ -90,14 +90,14 @@ class BookmarkSession extends Bookmark {
   }
 
   /**
-   * {@inheritdoc}
+   * Inherits.
    */
   public function delete() {
     unset($_SESSION['islandora_bookmark'][$this->bookmarkId]);
   }
 
   /**
-   * {@inheritdoc}
+   * Inherits.
    */
   public function getUsers() {
     return array(
@@ -106,28 +106,28 @@ class BookmarkSession extends Bookmark {
   }
 
   /**
-   * {@inheritdoc}
+   * Inherits.
    */
   public function removeUser($user_delete) {
     // No-op.
   }
 
   /**
-   * {@inheritdoc}
+   * Inherits.
    */
   public function addUser($user_add) {
     // No-op.
   }
 
   /**
-   * {@inheritdoc}
+   * Inherits.
    */
   public function removePid($pid) {
     $this->pidList = array_diff($this->pidList, array($pid));
   }
 
   /**
-   * {@inheritdoc}
+   * Inherits.
    */
   public function addPid($pid) {
     $this->pidList[] = $pid;

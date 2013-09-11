@@ -13,9 +13,9 @@ class BookmarkDatabase extends Bookmark {
   /**
    * Mapping for use in $this->getMapped().
    *
-   * @var
+   * @var array
    */
-  protected $magic_map = array(
+  protected $magicMap = array(
     'bookmarkName' => 'listname',
     'bookmarkOwner' => 'listowner',
   );
@@ -27,7 +27,7 @@ class BookmarkDatabase extends Bookmark {
     parent::__construct($list_id, NULL, NULL);
     $this->isPersistent = TRUE;
 
-    foreach (array_keys($this->magic_map) as $for_magic) {
+    foreach (array_keys($this->magicMap) as $for_magic) {
       unset($this->$for_magic);
     }
   }
@@ -49,8 +49,8 @@ class BookmarkDatabase extends Bookmark {
    *   If we do not have a mapping for the given exception, throw an exception.
    */
   protected function getMapped($property) {
-    if (isset($this->magic_map[$property])) {
-      return $this->magic_map[$property];
+    if (isset($this->magicMap[$property])) {
+      return $this->magicMap[$property];
     }
     else {
       throw new Exception(format_string('Unknown property "@property".', array(
@@ -125,7 +125,7 @@ class BookmarkDatabase extends Bookmark {
   }
 
   /**
-   * {@inheritdoc}
+   * Inherits.
    */
   public function getPids($offset = 0, $limit = -1) {
     $s = $this->getPidQuery();
@@ -138,7 +138,7 @@ class BookmarkDatabase extends Bookmark {
   }
 
   /**
-   * {@inheritdoc}
+   * Inherits.
    */
   public function getPidCount() {
     $s = $this->getPidQuery()->countQuery();
@@ -179,7 +179,7 @@ class BookmarkDatabase extends Bookmark {
   }
 
   /**
-   * {@inheritdoc}
+   * Inherits.
    */
   public function delete() {
     if ($this->managementAccess()) {
@@ -205,7 +205,7 @@ class BookmarkDatabase extends Bookmark {
   }
 
   /**
-   * {@inheritdoc}
+   * Inherits.
    */
   public function removeUser($user_delete) {
     db_delete('islandora_bookmark_list_users')
@@ -215,7 +215,7 @@ class BookmarkDatabase extends Bookmark {
   }
 
   /**
-   * {@inheritdoc}
+   * Inherits.
    */
   public function addUser($user_add) {
     $fields = array(
@@ -226,7 +226,7 @@ class BookmarkDatabase extends Bookmark {
   }
 
   /**
-   * {@inheritdoc}
+   * Inherits.
    */
   public function removePid($pid) {
     db_delete('islandora_bookmark_list_pids')
@@ -236,7 +236,7 @@ class BookmarkDatabase extends Bookmark {
   }
 
   /**
-   * {@inheritdoc}
+   * Inherits.
    */
   public function addPid($pid) {
     $fields = array(
@@ -247,7 +247,7 @@ class BookmarkDatabase extends Bookmark {
   }
 
   /**
-   * {@inheritdoc}
+   * Inherits.
    */
   public function getUsers() {
     return db_select('islandora_bookmark_list_users', 'u')
