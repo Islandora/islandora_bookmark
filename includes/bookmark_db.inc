@@ -54,7 +54,8 @@ class BookmarkDatabase extends Bookmark {
       return $this->magicMap[$property];
     }
     else {
-      throw new Exception(format_string('Unknown property "@property".', array(
+      return FALSE;
+      trigger_error(format_string('Unknown property "@property".', array(
         '@property' => $property,
       )));
     }
@@ -64,24 +65,30 @@ class BookmarkDatabase extends Bookmark {
    * Magic property... Map to our column name, and set it.
    */
   public function __set($property, $value) {
-    db_update('islandora_bookmark_list_names')
-      ->fields(array(
-        $this->getMapped($property) => $value,
-      ))
-      ->condition('listid', $this->bookmarkId)
-      ->execute();
-    return $value;
+    $mapped = $this->getMapped($property);
+    if ($mapped) {
+      db_update('islandora_bookmark_list_names')
+        ->fields(array(
+          $mapped => $value,
+        ))
+        ->condition('listid', $this->bookmarkId)
+        ->execute();
+      return $value;
+    }
   }
 
   /**
    * Magic property... Map to our column name, and get it.
    */
   public function __get($property) {
-    return db_select('islandora_bookmark_list_names', 'n')
-      ->fields('n', array($this->getMapped($property)))
-      ->condition('listid', $this->bookmarkId)
-      ->execute()
-      ->fetchField();
+    $mapped = $this->getMapped($property);
+    if ($mapped) {
+      return db_select('islandora_bookmark_list_names', 'n')
+        ->fields('n', array($this->getMapped($property)))
+        ->condition('listid', $this->bookmarkId)
+        ->execute()
+        ->fetchField();
+    }
   }
 
   /**

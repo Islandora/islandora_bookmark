@@ -482,16 +482,16 @@ function islandora_bookmark_detailed_forms($list_id) {
  *   The Drupal form definition.
  * @param array $form_state
  *   The Drupal form state.
+ * @param mixed $list_id
+ *   The identifier for the current list.
  *
  * @return array
  *   The Drupal form definition.
  */
 function islandora_bookmark_detailed_form(array $form, array &$form_state, $list_id) {
   global $user;
-  module_load_include('inc', 'islandora_bookmark', 'includes/api');
-  module_load_include('inc', 'islandora', 'includes/utilities');
-  drupal_add_css(drupal_get_path('module', 'islandora_bookmark') . '/css/islandora_bookmark.css');
-  $bookmark = islandora_bookmark_get_bookmark_by_number($list_id);
+
+  $bookmark = Bookmark::getList($list_id);
 
   if (module_exists('citation_exporter')) {
     if (CitationExporter::ReadyToExport()) {
@@ -509,15 +509,30 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
 
   $form = array(
     '#tree' => TRUE,
+    '#attached' => array(
+      'css' => array(
+        drupal_get_path('module', 'islandora_bookmark') . '/css/islandora_bookmark.css',
+      ),
+    ),
     '#prefix' => '<div id="islandora-bookmark-detailed-overview">',
     '#suffix' => '</div>',
+    'bookmarks' => array(
+      '#weight' => 0,
+      'fieldset' => array(
+        '#type' => 'fieldset',
+        '#title' => 'Detailed List',
+        '#prefix' => '<div id="islandora-bookmark-detailed-list">',
+        '#suffix' => '</div>',
+      ),
+    ),
   );
 
   // This is the RSS icon link.
   if ($bookmark->getIsPersistent() && $bookmark->getPidCount() > 0) {
     $id = $bookmark->getId();
     $form['bookmark_rss'] = array(
-      '#markup' => l(theme_image(array(
+      '#weight' => -1,
+      '#markup' => l(theme('image', array(
         'path' => drupal_get_path('module', 'islandora_bookmark') . '/images/rss.png',
         'title' => t('Present Bookmark list in RSS form'),
         'attributes' => array(),
@@ -526,31 +541,15 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
       '#suffix' => '</div>',
     );
   }
-  $form['bookmarks'] = array(
-    'fieldset' => array(
-      '#type' => 'fieldset',
-      '#title' => 'Detailed List',
-      '#prefix' => '<div id="islandora-bookmark-detailed-list">',
-      '#suffix' => '</div>',
-    ),
-  );
 
   $rows = array();
 
   // Do pager calcuations to limit the number of objects displayed per page.
   $num_eles = variable_get('islandora_bookmark_detailed_page_elements', 10);
   $num_pids = $bookmark->getPidCount();
+  $pager_element = 0;
 
-  // Incase we get a page request > than the pages, Drupal will
-  // show the last page automatically, need to reflect the pids populated
-  // in this fashion.
-  $calc_pages = ceil($num_pids / $num_eles) - 1;
-  if (!empty($_GET['page'])) {
-    $page = min($_GET['page'], $calc_pages);
-  }
-  else {
-    $page = 0;
-  }
+  $page = pager_default_initialize($num_pids, $num_eles, $pager_element);
   $offset = $page * $num_eles;
 
   $pids = $bookmark->getPids($offset, $num_eles);
@@ -561,20 +560,15 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
       'markup' => islandora_bookmark_generate_markup($pid),
     );
   }
-  pager_default_initialize($num_pids, $num_eles);
-  $form['bookmarks']['fieldset']['pager'] = array(
-    '#markup' => theme('pager'),
-    '#weight' => -1,
-  );
+  $row_count = count($rows);
 
   $header = array('markup' => array('data' => t('Label')));
 
-  $buttons = array();
   $form_state['islandora_bookmark_current_page'] = $page;
-  $form_state['islandora_bookmark_pids_on_page'] = count($pids);
+  $form_state['islandora_bookmark_pids_on_page'] = $row_count;
   if ($bookmark->bookmarkOwner === $user->uid) {
     $header['remove'] = array('data' => t('Operations'));
-    foreach ($pids as $key => $pid) {
+    foreach ($rows as $pid => &$row) {
       $remove_button = array(
         '#type' => 'submit',
         '#name' => 'remove_pid_' . $pid,
@@ -584,94 +578,116 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
         '#value' => t('Remove'),
 
       );
-      $rows[$pid]['remove'] = array(
+      $row['remove'] = array(
         'data' => drupal_render($remove_button),
         'class' => 'operations',
       );
     }
-    if (count($pids) != 0) {
-      $form['bookmarks']['fieldset']['remove_select'] = array(
-        '#type' => 'submit',
-        '#value' => t('Remove selected'),
-        '#name' => 'islandora_bookmark_remove_selected',
-      );
-      $form['bookmarks']['fieldset']['remove_all'] = array(
-        '#type' => 'submit',
-        '#value' => t('Remove all'),
-        '#name' => 'islandora_bookmark_remove_all',
-      );
-    }
+    // XXX: Silly looping with references...
+    unset($row);
   }
-  if (count($rows)) {
-    $form['bookmarks']['fieldset']['table'] = array(
+
+  $form['bookmarks']['fieldset'] += array(
+    'table' => array(
       '#header' => $header,
       '#type' => 'tableselect',
       '#options' => $rows,
       '#empty' => t('@type list is empty.', array('@type' => ucwords(variable_get('islandora_bookmark_type', 'bookmark')))),
       '#weight' => -2,
-    );
-  }
-  else {
-    $form['bookmarks']['fieldset']['table'] = array(
-      '#markup' => t('@type list is empty.', array('@type' => ucwords(variable_get('islandora_bookmark_type', 'bookmark')))),
-    );
-  }
+    ),
+    'pager' => array(
+      '#markup' => theme('pager', array(
+        'element' => $pager_element,
+      )),
+      '#weight' => -1,
+    ),
+  );
 
-  if (count($pids) != 0 && user_access('export islandora bookmarks')) {
-    $form['bookmarks']['fieldset']['format_opts'] = array(
-      '#weight' => 4,
-    );
-    $export_styles = array();
-    $export = islandora_bookmark_get_export_options();
-    $export_options['default'] = t('- Export type -');
-
-    foreach ($export as $module_name => $export_array) {
-      foreach ($export_array as $name => $export_func) {
-        $export_options[t("@module_name", array("@module_name" => $module_name))][$name] = $name;
-        $form_state['islandora_bookmark_export'][$name] = $export_func;
-        $export_styles[$name] = islandora_bookmark_get_export_format_options($name);
-      }
+  if ($row_count > 0) {
+    if ($bookmark->bookmarkOwner === $user->uid) {
+      $form['bookmarks']['fieldset'] += array(
+        'remove_select' => array(
+          '#type' => 'submit',
+          '#value' => t('Remove selected'),
+          '#name' => 'islandora_bookmark_remove_selected',
+        ),
+        'remove_all' => array(
+          '#type' => 'submit',
+          '#value' => t('Remove all'),
+          '#name' => 'islandora_bookmark_remove_all',
+        ),
+      );
     }
-    foreach ($export_styles as $key => $value) {
-      if (count($export_styles[$key])) {
-        $form['bookmarks']['fieldset']['format_opts']['export_styles'][$key] = array(
-          '#type' => 'select',
-          '#title' => t('Style'),
-          '#options' => $export_styles[$key],
-          '#weight' => 4,
-          '#name' => 'islandora_bookmark_export_styles_' . $key,
-          '#states' => array(
-            'visible' => array(
-              ':input[name="islandora_bookmark_export_options_select"]' => array('value' => $key),
+
+    if (user_access('export islandora bookmarks')) {
+      $export_styles = array();
+      $export = islandora_bookmark_get_export_options();
+      $export_options['default'] = t('- Export type -');
+
+      foreach ($export as $module_name => $export_array) {
+        foreach ($export_array as $name => $export_func) {
+          $export_options[t("@module_name", array("@module_name" => $module_name))][$name] = $name;
+          $form_state['islandora_bookmark_export'][$name] = $export_func;
+          $export_styles[$name] = islandora_bookmark_get_export_format_options($name);
+        }
+      }
+
+      $style_elements = array();
+      foreach ($export_styles as $key => $value) {
+        if (!empty($value)) {
+          $style_elements[$key] = array(
+            '#type' => 'select',
+            '#title' => t('Style'),
+            '#options' => $value,
+            '#weight' => 4,
+            '#name' => 'islandora_bookmark_export_styles_' . $key,
+            '#states' => array(
+              'visible' => array(
+                ':input[name="islandora_bookmark_export_options_select"]' => array('value' => $key),
+              ),
             ),
-          ),
-        );
+          );
+        }
       }
-    }
 
-    $form['bookmarks']['fieldset']['export_title'] = array(
-      '#markup' => '<h3>' . t('Export') . '</h3>',
-      '#weight' => 3,
-    );
-    $form['bookmarks']['fieldset']['export_options'] = array(
-      '#type' => 'select',
-      '#title' => t('Format'),
-      '#options' => $export_options,
-      '#weight' => 4,
-      '#name' => 'islandora_bookmark_export_options_select',
-    );
-    $form['bookmarks']['fieldset']['format_opts']['export_selected_submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('Export selected @type', array('@type' => variable_get('islandora_bookmark_type', 'bookmark') . 's')),
-      '#name' => 'export_selected',
-      '#weight' => 5,
-    );
-    $form['bookmarks']['fieldset']['format_opts']['export_all_submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('Export all @type', array('@type' => variable_get('islandora_bookmark_type', 'bookmark') . 's')),
-      '#name' => 'export_all',
-      '#weight' => 6,
-    );
+      $form['bookmarks']['fieldset'] += array(
+        'export_title' => array(
+          '#markup' => '<h3>' . t('Export') . '</h3>',
+          '#weight' => 3,
+        ),
+        'export_options' => array(
+          '#type' => 'select',
+          '#title' => t('Format'),
+          '#options' => $export_options,
+          '#weight' => 4,
+          '#name' => 'islandora_bookmark_export_options_select',
+        ),
+        'format_opts' => array(
+          '#weight' => 4,
+          'export_styles' => $style_elements,
+          'export_selected_submit' => array(
+            '#type' => 'submit',
+            '#value' => t('Export selected @type', array(
+              // XXX: Should be made better for translating... (Not all
+              // languages add an "s" to pluralize).
+              '@type' => variable_get('islandora_bookmark_type', 'bookmark') . 's',
+            )),
+            '#name' => 'export_selected',
+            '#weight' => 5,
+          ),
+          'export_all_submit' => array(
+            '#type' => 'submit',
+            '#value' => t('Export all @type', array(
+              // XXX: Should be made better for translating... (Not all
+              // languages add an "s" to pluralize).
+              '@type' => variable_get('islandora_bookmark_type', 'bookmark') . 's'
+            )),
+            '#name' => 'export_all',
+            '#weight' => 6,
+          ),
+        ),
+      );
+    }
   }
 
   // Share.
@@ -689,20 +705,11 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
             else {
               $output_user = user_load($add_user)->name;
             }
-            drupal_set_message(t('The user @adduser has been added to @listname',
-                array(
-                  '@listname' => $bookmark->bookmarkName,
-                  '@adduser' => $output_user,
-                )
-              ));
+            drupal_set_message(t('The user @adduser has been added to @listname', array(
+              '@listname' => $bookmark->bookmarkName,
+              '@adduser' => $output_user,
+            )));
             $bookmark->addUsers(array($add_user));
-          }
-          else {
-            drupal_set_message(t("Please select a user to add to @listname.",
-                array(
-                  '@listname' => $bookmark->bookmarkName,
-                )
-              ), 'error');
           }
         }
         // Remove.
@@ -726,20 +733,10 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
       }
 
       $fku = array();
-      $rids = array_keys($user->roles);
-      // Anonymous users can't share lists with other users.
-      if (!in_array('1', $rids)) {
-        $form['bookmarks']['users'] = array(
-          '#type' => 'fieldset',
-          '#collapsible' => TRUE,
-          '#collapsed' => FALSE,
-          '#title' => t('Share'),
-          '#prefix' => '<div id="islandora-bookmark-detailed-overview-users">',
-          '#suffix' => '</div>',
-        );
+      if ($bookmark->getIsPersistent()) {
 
         $users = $bookmark->getUsers();
-        if (count($users) < 2) {
+        if (count($users) === 0) {
           $fku['empty'] = array(
             '#type' => 'item',
             '#markup' => t('@type list is not shared with other users.', array(
@@ -754,7 +751,9 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
           // Remove the user from the populated shared users.
           $bookmark_users = $bookmark->getUsers();
           $key = array_search($user->uid, $bookmark_users);
-          unset($bookmark_users[$key]);
+          if ($key !== FALSE) {
+            unset($bookmark_users[$key]);
+          }
 
           foreach ($bookmark_users as $itr => $uid) {
             $tempuser = user_load($uid);
@@ -798,7 +797,9 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
           }
         }
 
-        $selectoptions = array("" => t("- Select user -"));
+        $selectoptions = array(
+          '' => t('- Select user -'),
+        );
         if ($user->uid != 0) {
           $options['0'] = array(
             'uid' => 0,
@@ -806,20 +807,18 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
           );
         }
         // Get all users for use in select for forms.
-        $result = db_query("SELECT uid, name FROM {users} WHERE STATUS != 0 ORDER BY uid");
+        $result = db_select('users', 'u')
+          ->fields('u', array('uid', 'name'))
+          ->condition('STATUS', 0, '!=')
+          ->condition('uid', $user->uid, '!=')
+          ->orderBy('uid')
+          ->execute();
 
-        foreach ($result as $record) {
-          if ($record->uid != $user->uid) {
-            $resultname = $record->name;
-            if ($record->uid == 0) {
-              $resultname = t('Everyone');
-            }
-            $options[$record->uid] = array(
-              'uid' => $record->uid,
-              'name' => $resultname,
-            );
-          }
+        $options += $result->fetchAllAssoc('uid', PDO::FETCH_ASSOC);
+        if (isset($options['0'])) {
+          $options[0]['name'] = t('Everyone');
         }
+
         $available = array_diff_key($options, drupal_map_assoc($bookmark->getUsers()));
         foreach ($available as $index => $item) {
           $selectoptions[$index] = $item['uid'] . ': ' . $item['name'];
@@ -843,7 +842,15 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
             'method' => 'replace',
           ),
         );
-        $form['bookmarks']['users'] += $fku;
+
+        $form['bookmarks']['users'] = array(
+          '#type' => 'fieldset',
+          '#collapsible' => TRUE,
+          '#collapsed' => FALSE,
+          '#title' => t('Share'),
+          '#prefix' => '<div id="islandora-bookmark-detailed-overview-users">',
+          '#suffix' => '</div>',
+        ) + $fku;
       }
     }
   }
@@ -859,6 +866,21 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
   $form_state['bookmark_object'] = $bookmark;
 
   return $form;
+}
+
+function islandora_bookmark_detailed_form_validate(&$form, &$form_state) {
+  $bookmark = Bookmark::getList($form_state['build_info']['args'][0]);
+  if (isset($form_state['triggering_element']['#button_id'])) {
+    if ($form_state['triggering_element']['#button_id'] == 'islandora-bookmark-add-user') {
+      $parents = array('bookmarks', 'users', 'listusers');
+      $add_user = drupal_array_get_nested_value($form_state['values'], $parents);
+      if (drupal_strlen($add_user) === 0) {
+        form_set_error(implode('][', $parents), t('Please select a user to add to @listname.', array(
+          '@listname' => $bookmark->bookmarkName,
+        )));
+      }
+    }
+  }
 }
 
 /**
@@ -885,18 +907,17 @@ function islandora_bookmark_detailed_form_submit(array $form, array &$form_state
     }
   }
 
+  $bookmark = Bookmark::getList($form_state['build_info']['args'][0]);
+
   if ($match) {
-    $bookmark = Bookmark::getList($form_state['build_info']['args'][0]);
     $bookmark->removePids(array($match[1]));
     $removed_object = islandora_object_load($match[1]);
 
-    drupal_set_message(t('The @type @objectname has been removed from @listname.',
-        array(
-          '@type' => variable_get('islandora_bookmark_type', 'bookmark'),
-          '@listname' => $bookmark->bookmarkName,
-          '@objectname' => $removed_object->label,
-        )
-      ));
+    drupal_set_message(t('The @type @objectname has been removed from @listname.', array(
+      '@type' => variable_get('islandora_bookmark_type', 'bookmark'),
+      '@listname' => $bookmark->bookmarkName,
+      '@objectname' => $removed_object->label,
+    )));
     $current_page = $form_state['islandora_bookmark_current_page'];
     $current_pids = $form_state['islandora_bookmark_pids_on_page'];
 
@@ -974,7 +995,6 @@ function islandora_bookmark_detailed_form_submit(array $form, array &$form_state
       }
     }
     if (count($pids) > 0) {
-      $bookmark = $form_state['bookmark_object'];
       $bookmark->removePids($pids);
       drupal_set_message(t('The selected @type have been removed from @listname.',
           array(
@@ -1014,7 +1034,6 @@ function islandora_bookmark_detailed_form_submit(array $form, array &$form_state
     }
   }
   elseif ($form_state['clicked_button']['#name'] === 'islandora_bookmark_remove_all') {
-    $bookmark = $form_state['bookmark_object'];
     $remove_count = $bookmark->getPidCount();
     $bookmark->removeAllPids();
 
@@ -1025,7 +1044,6 @@ function islandora_bookmark_detailed_form_submit(array $form, array &$form_state
   }
   // Export all pids.
   else {
-    $bookmark = $form_state['bookmark_object'];
     $pids = $bookmark->getPids();
     $all_pids = array_filter($pids, 'islandora_object_load');
     $broke_pids = array_diff($pids, $all_pids);
@@ -1077,9 +1095,9 @@ function islandora_bookmark_detailed_form_manage(array $form, array &$form_state
   module_load_include('inc', 'islandora_bookmark', 'includes/api');
   module_load_include('inc', 'islandora', 'includes/utilities');
   drupal_add_css(drupal_get_path('module', 'islandora_bookmark') . '/css/islandora_bookmark.css');
-  $bookmark = islandora_bookmark_get_bookmark_by_number($list_id);
 
   $form = array('#tree' => TRUE);
+  $bookmark = Bookmark::getList($list_id);
 
   // Manage.
   if ($bookmark->bookmarkOwner === $user->uid) {
