@@ -546,18 +546,12 @@ function islandora_bookmark_detailed_form(array $form, array &$form_state, $list
   // in this fashion.
   $calc_pages = ceil($num_pids / $num_eles) - 1;
   if (!empty($_GET['page'])) {
-    $page = $_GET['page'];
-  }
-  if (empty($page)) {
-    $page = 0;
-    $offset = 0;
+    $page = min($_GET['page'], $calc_pages);
   }
   else {
-    if ($page > $calc_pages) {
-      $page = $calc_pages;
-    }
-    $offset = $page * $num_eles;
+    $page = 0;
   }
+  $offset = $page * $num_eles;
 
   $pids = $bookmark->getPids($offset, $num_eles);
 
