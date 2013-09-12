@@ -153,7 +153,7 @@ class BookmarkDatabase extends Bookmark {
    * @param string $name
    *   The name for the list.
    * @param string $type
-   *   A string indicating the type of list.
+   *   A string indicating the type of list. Default is 'bookmark'.
    * @param object $owner
    *   A user object from which we can grab the uid. If not provided, we'll
    *   grab the global "$user" variable.
@@ -184,21 +184,11 @@ class BookmarkDatabase extends Bookmark {
    */
   public function delete() {
     if ($this->managementAccess()) {
+      $this->removeUsers($this->getUsers());
+      $this->removePids($this->getPids());
       db_delete('islandora_bookmark_list_names')
         ->condition('listid', $this->bookmarkId)
         ->execute();
-
-      foreach ($this->getUsers() as $key => $value) {
-        db_delete('islandora_bookmark_list_users')
-          ->condition('listid', $this->bookmarkId)
-          ->execute();
-      }
-
-      foreach ($this->getPids() as $key => $value) {
-        db_delete('islandora_bookmark_list_pids')
-          ->condition('listid', $this->bookmarkId)
-          ->execute();
-      }
     }
     else {
       throw new Exception(t("You do not have access to remove the list @bookmarkname", array("@bookmarkname" => $this->bookmarkName)));
