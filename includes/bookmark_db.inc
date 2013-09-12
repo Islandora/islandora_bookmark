@@ -54,10 +54,10 @@ class BookmarkDatabase extends Bookmark {
       return $this->magicMap[$property];
     }
     else {
-      return FALSE;
       trigger_error(format_string('Unknown property "@property".', array(
         '@property' => $property,
       )));
+      return FALSE;
     }
   }
 
@@ -251,6 +251,7 @@ class BookmarkDatabase extends Bookmark {
     return db_select('islandora_bookmark_list_users', 'u')
       ->fields('u', array('uid'))
       ->condition('listid', $this->bookmarkId)
+      ->condition('uid', $this->bookmarkOwner, '!=')
       ->execute()
       ->fetchAll(PDO::FETCH_COLUMN);
   }
