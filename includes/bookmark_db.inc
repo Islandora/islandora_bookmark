@@ -18,6 +18,7 @@ class BookmarkDatabase extends Bookmark {
   protected $magicMap = array(
     'bookmarkName' => 'listname',
     'bookmarkOwner' => 'listowner',
+    'type' => 'type',
   );
 
   /**
