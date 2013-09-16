@@ -332,6 +332,15 @@ abstract class Bookmark implements BookmarkInterface {
     }
   }
 
+  /**
+   * Get the definition for the table.
+   *
+   * @param array $pids
+   *   An array of PIDs, for which to build a tableselect.
+   *
+   * @return array
+   *   An associative array defining a tableselect element.
+   */
   protected function getTable($pids) {
     return array(
       '#type' => 'tableselect',
@@ -340,6 +349,13 @@ abstract class Bookmark implements BookmarkInterface {
     );
   }
 
+  /**
+   * Build the header for the table.
+   *
+   * @return array
+   *   An array representing the header for a tableselect, as used by
+   *   theme_tableselect().
+   */
   protected function getTableHeader() {
     $header = array('markup' => array('data' => t('Label')));;
 
@@ -350,6 +366,15 @@ abstract class Bookmark implements BookmarkInterface {
     return $header;
   }
 
+  /**
+   * Build the row for the given PID.
+   *
+   * @param string $pid
+   *   A PID for which to generate a row in the tableselect.
+   *
+   * @return array
+   *   An associative array keyed according to what is provided in the header.
+   */
   protected function getTableRow($pid) {
     $row = array(
       'markup' => islandora_bookmark_generate_markup($pid),
@@ -442,7 +467,7 @@ abstract class Bookmark implements BookmarkInterface {
 
     $table = $this->getTable($pids);
     $form['bookmarks']['fieldset'] += array(
-      'table' =>  $table += array(
+      'table' => $table += array(
         '#empty' => t('@type list is empty.', array(
           '@type' => ucwords(variable_get('islandora_bookmark_type', 'bookmark')),
         )),
@@ -636,6 +661,12 @@ abstract class Bookmark implements BookmarkInterface {
     return $form;
   }
 
+  /**
+   * Add actions to the given section of the form.
+   *
+   * @param array $container
+   *   A reference to a part of the form, where the actions should be added.
+   */
   public function formAddActions(&$container, &$form_state) {
     $groups = array();
 
@@ -746,6 +777,9 @@ abstract class Bookmark implements BookmarkInterface {
     }
   }
 
+  /**
+   * Form validation callback; ensure at least one object is selected.
+   */
   protected function formHasObjectsSelected($form, $form_state) {
     $pids = $this->formGetSelected($form_state);
     if (empty($pids)) {
@@ -766,16 +800,25 @@ abstract class Bookmark implements BookmarkInterface {
     }
   }
 
+  /**
+   * Submission callback; export the selected PIDs.
+   */
   protected function formExportSelected($form, $form_state) {
     $pids = $this->formGetSelected($form_state);
     $this->formExport($pids, $form_state);
   }
 
+  /**
+   * Submission callback; export all PIDs in the list.
+   */
   protected function formExportAll($form, $form_state) {
     $pids = $this->formGetAll($form_state);
     $this->formExport($pids, $form_state);
   }
 
+  /**
+   * Submission helper; export the given PIDs.
+   */
   protected function formExport($pids, $form_state) {
     $el = $form_state['complete form']['bookmarks']['fieldset']['export_options'];
     $key = drupal_array_get_nested_value($form_state['values'], $el['#parents']);
@@ -791,16 +834,25 @@ abstract class Bookmark implements BookmarkInterface {
     call_user_func_array($form_state['islandora_bookmark_export'][$key], $params);
   }
 
+  /**
+   * Submission callback; remove the selected PIDs from the list.
+   */
   protected function formRemoveSelectedFromList($form_state) {
     $pids = $this->formGetAll($form_state);
     $this->formRemoveFromList($pids, $form_state);
   }
 
+  /**
+   * Submission callback; remove all PIDs from the list.
+   */
   protected function formRemoveAllFromList($form_state) {
     $pids = $this->formGetAll($form_state);
     $this->formRemoveFromList($pids, $form_state);
   }
 
+  /**
+   * Submission helper; remove the given PIDs from the list.
+   */
   protected function formRemoveFromList($pids, $form_state) {
     $this->removePids($pids);
   }
@@ -809,7 +861,11 @@ abstract class Bookmark implements BookmarkInterface {
    * Form validation handler.
    */
   public function formValidate(&$form, &$form_state) {
-    if (isset($form_state['clicked_button']['#action_validate'])) {
+    $pids_to_remove = $this->formGetPidToRemove($form_state);
+    if ($pids_to_remove) {
+      // No-op.
+    }
+    elseif (isset($form_state['clicked_button']['#action_validate'])) {
       $params = array(&$form, &$form_state);
       foreach ($form_state['clicked_button']['#action_validate'] as $validator) {
         call_user_func_array(array($this, $validator), $params);
@@ -829,32 +885,36 @@ abstract class Bookmark implements BookmarkInterface {
   }
 
   /**
+   * Get the PIDs of any single remove button(s).
+   *
+   * @return array
+   *   An array of PIDs--may be empty if there are none present.
+   */
+  protected function formGetPidToRemove($form_state) {
+    $to_remove = preg_grep('/remove_pid_.*/', array_keys($form_state['input']));
+    return preg_replace('/remove_pid_(.*)/', '$1', $to_remove);
+  }
+
+  /**
    * Form submission handler.
    */
   public function formSubmit(&$form, &$form_state) {
-    if (isset($form_state['clicked_button']['#action_submit'])) {
-      $params = array(&$form, &$form_state);
-      foreach ($form_state['clicked_button']['#action_submit'] as $submit) {
-        call_user_func_array(array($this, $submit), $params);
-      }
-    }
-    else {
-      foreach ($_POST as $key => $value) {
-        preg_match('/remove_pid_(.*)/', $key, $match);
-        if ($match) {
-          break;
-        }
-      }
+    $pids_to_remove = $this->formGetPidToRemove($form_state);
+    if ($pids_to_remove) {
+      $this->removePids($pids_to_remove);
 
-      if ($match) {
-        $this->removePids(array($match[1]));
-        $removed_object = islandora_object_load($match[1]);
-
+      foreach (array_map('islandora_object_load', $pids_to_remove) as $removed_object) {
         drupal_set_message(t('The @type @objectname has been removed from @listname.', array(
           '@type' => variable_get('islandora_bookmark_type', 'bookmark'),
           '@listname' => $this->bookmarkName,
           '@objectname' => $removed_object->label,
         )));
+      }
+    }
+    elseif (isset($form_state['clicked_button']['#action_submit'])) {
+      $params = array(&$form, &$form_state);
+      foreach ($form_state['clicked_button']['#action_submit'] as $submit) {
+        call_user_func_array(array($this, $submit), $params);
       }
     }
 

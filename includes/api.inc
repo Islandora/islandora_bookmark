@@ -112,10 +112,16 @@ function islandora_bookmark_get_bookmarks_visible_to_user($pid, $uid) {
   }
   else {
     // DB.
-    $list_result = db_query('SELECT u.listid from {islandora_bookmark_list_users} as u INNER JOIN {islandora_bookmark_list_pids} as p ON u.listid = p.listid WHERE uid = :uid AND pidid = :pid', array(':uid' => $uid, ':pid' => $pid));
-    foreach ($list_result as $record) {
-      $lists[$record->listid] = $record->listid;
-    }
+    $q = <<<EOQ
+SELECT u.listid
+FROM {islandora_bookmark_list_users} as u INNER JOIN
+  {islandora_bookmark_list_pids} as p ON u.listid = p.listid INNER JOIN
+  {islandora_bookmark_list_names} as n ON u.listid = n.listid
+WHERE p.pidid = :pid AND :uid IN (u.uid, n.listowner)
+EOQ;
+    $list_result = db_query($q, array(':uid' => $uid, ':pid' => $pid))
+      ->fetchAll(PDO::FETCH_COLUMN);
+    $lists += drupal_map_assoc($list_result);
   }
   return $lists;
 }
@@ -135,7 +141,7 @@ function islandora_bookmark_list_pids_query($value) {
 }
 
 /**
- * Retrieves all the uids from the bookmark listid.
+ * Retrieves all the uids from the bookmark listid, including owner.
  *
  * @param string $value
  *   The listid.
@@ -145,5 +151,7 @@ function islandora_bookmark_list_pids_query($value) {
  */
 function islandora_bookmark_list_users_query($value) {
   $list = Bookmark::getList($value);
-  return $list->getUsers();
+  $users = $list->getUsers();
+  $users[] = $list->bookmarkOwner;
+  return $users;
 }

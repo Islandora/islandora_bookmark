@@ -628,7 +628,7 @@ function islandora_bookmark_fedora_repository_object_form(array $form, array &$f
     '#suffix' => '</div>',
   );
 
-  if (count($containing_lists)) {
+  if (count($containing_lists) > 0) {
     $links = array();
     foreach ($containing_lists as $key => $value) {
       $bookmark_object = islandora_bookmark_get_bookmark_by_number($value);
@@ -690,6 +690,20 @@ function islandora_bookmark_fedora_repository_object_form(array $form, array &$f
   $form_state['islandora_bookmark_pid'] = $pid;
 
   return $form;
+}
+
+/**
+ * Form validation callback.
+ */
+function islandora_bookmark_fedora_repository_object_form_validate(&$form, &$form_state) {
+  $key = $form_state['values']['add_bookmarks'];
+  if ($key == 'default') {
+    $pid = $form_state['islandora_bookmark_pid'];
+    $object = islandora_object_load($pid);
+    form_set_error('islandora_bookmark][add_bookmarks', t('Please select a list to bookmark @label.', array(
+      '@label' => $object->label,
+    )));
+  }
 }
 
 /**
@@ -961,11 +975,14 @@ function islandora_bookmark_add_form_submit(array $form, array &$form_state) {
  *   The Drupal form definition.
  */
 function islandora_bookmark_add_pid(array $form, array &$form_state) {
-  module_load_include('inc', 'islandora_bookmark', 'includes/api');
-  $key = $form_state['values']['add_bookmarks'];
-  $pid = $form_state['islandora_bookmark_pid'];
-  $object = islandora_object_load($pid);
-  if ($key !== 'default') {
+  $errors = form_get_errors();
+
+  if (count($errors) === 0) {
+    module_load_include('inc', 'islandora_bookmark', 'includes/api');
+    $key = $form_state['values']['add_bookmarks'];
+    $pid = $form_state['islandora_bookmark_pid'];
+    $object = islandora_object_load($pid);
+
     $bookmark_object = islandora_bookmark_get_bookmark_by_number($key);
 
     try {
@@ -980,11 +997,12 @@ function islandora_bookmark_add_pid(array $form, array &$form_state) {
     catch (Exception $e) {
       drupal_set_message($e->getMessage(), 'error');
     }
+
+    return drupal_rebuild_form('islandora_bookmark_fedora_repository_object_form', $form_state, $form);
   }
   else {
-    drupal_set_message(t('Please select a list to bookmark @label.', array('@label' => $object->label)), 'error');
+    return $form;
   }
-  return drupal_rebuild_form('islandora_bookmark_fedora_repository_object_form', $form_state, $form);
 }
 
 /**
