@@ -308,7 +308,7 @@ function islandora_bookmark_delete_bookmark_confirm_submit(array $form, array &$
  * Callback function for removing self confirm form.
  */
 function islandora_bookmark_remove_self(array $form, array &$form_state) {
-  drupal_goto('islandora-bookmark/remove-self/' . $form_state['bookmark_object']->getId());
+  drupal_goto('islandora-bookmark/remove-self/' . $form_state['build_info']['args'][0]);
 }
 
 /**
