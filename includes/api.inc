@@ -66,7 +66,7 @@ function islandora_bookmark_get_user_shared_bookmarks() {
     $templist = Bookmark::getList($id);
     $bookmark_list[] = $templist;
   }
-  return $bookmark_list;
+  return array_filter($bookmark_list);
 }
 
 /**

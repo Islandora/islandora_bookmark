@@ -99,8 +99,9 @@ class BookmarkDatabase extends Bookmark {
    * @param mixed $id
    *   A bookmark list ID.
    *
-   * @return Bookmark
-   *   A subclass of Bookmark, to which we can add and remove items.
+   * @return Bookmark|NULL
+   *   A subclass of Bookmark, to which we can add and remove items, or NULL if
+   *   there is an error.
    */
   public static function getList($id) {
     $types = module_invoke_all('islandora_bookmark_database_types');
@@ -115,7 +116,7 @@ class BookmarkDatabase extends Bookmark {
       return new $class($id);
     }
     else {
-      return new static($id);
+      return NULL;
     }
   }
 
