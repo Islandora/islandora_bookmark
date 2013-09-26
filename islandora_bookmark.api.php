@@ -57,11 +57,11 @@ function hook_islandora_bookmark_export_styles($option) {
 /**
  * Hook to change or add values to RSS fields.
  *
- * Somtimes you might want to alter fields for an rss item.
- * 
+ * Sometimes you might want to alter fields for an rss item.
+ *
  * @param AbstractObject $object
  *   The bookmarked object
- * 
+ *
  * @return array
  *   Returns an array containing the additional changes to the rss item.
  */
@@ -86,4 +86,22 @@ function hook_islandora_bookmark_rss_item(AbstractObject $object) {
 
   // Return the RSS item.
   return $rss_item;
+}
+
+/**
+ * Get the mapping of types so we can instantiate different classes.
+ *
+ * The "bookmark" class just saves to the DB... We may want to add in other
+ * things to occur on different actions, like changing something on an object
+ * when we add an object to a list.
+ *
+ * @return array
+ *   An associative array mapping the "type" column in the
+ *   "islandora_bookmark_list_names" to a class to use to interact with the
+ *   given list.
+ */
+function hook_islandora_bookmark_database_types() {
+  return array(
+    'my_type' => 'my_awesome_bookmark_class',
+  );
 }

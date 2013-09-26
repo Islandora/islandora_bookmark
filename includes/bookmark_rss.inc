@@ -21,7 +21,7 @@ function islandora_bookmark_rss($list_id) {
   // Get bookmark based on boookmark list id.
   $bookmark = islandora_bookmark_get_bookmark_by_number($list_id);
   // Get all the pid belonging to that bookmark.
-  $all_pids = $bookmark->pidList;
+  $all_pids = $bookmark->getPids();
 
   // Loop through all the pids and build the formatted RSS items.
   $items = NULL;
