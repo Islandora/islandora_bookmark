@@ -650,7 +650,7 @@ abstract class Bookmark implements BookmarkInterface {
         }
       }
     }
-    elseif ($user->uid != 0 && $user->uid != $this->bookmarkOwner) {
+    elseif ($user->uid != 0 && $user->uid != $this->bookmarkOwner && !in_array(0, $this->getUsers())) {
       $form['bookmarks']['remove_self'] = array(
         '#type' => 'submit',
         '#value' => t('Remove yourself from this list'),
