@@ -196,6 +196,10 @@ class BookmarkDatabase extends Bookmark {
       db_delete('islandora_bookmark_list_names')
         ->condition('listid', $this->bookmarkId)
         ->execute();
+
+      // XXX: Only to deal with old lists, in which the owner was included in
+      // "users" table.
+      $this->removeUser($this->bookmarkOwner);
     }
     else {
       throw new Exception(t("You do not have access to remove the list @bookmarkname", array("@bookmarkname" => $this->bookmarkName)));
