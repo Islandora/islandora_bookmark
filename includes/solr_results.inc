@@ -52,7 +52,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
    * @return array
    *   An array containing form structure.
    */
-  public function buildForm($form, &$form_state, $object_results) {
+  public function formGet($form, &$form_state, $object_results) {
     $form_state['islandora_solr_query_processor'] = $this->islandoraSolrQueryProcessor;
     module_load_include('inc', 'islandora_bookmark', 'includes/api');
 
@@ -81,7 +81,6 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
 
     if (count($rows) > 0) {
       $form = array_merge($form, $this->getActions($form_state));
-
     }
 
     $form['islandora_bookmark_table'] = array(
@@ -235,7 +234,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
       ));
 
       foreach ($user_bookmarks as $bookmark) {
-        $save_options[$bookmark->bookmarkId] = $bookmark->bookmarkName;
+        $save_options[$bookmark->getId()] = $bookmark->bookmarkName;
       }
 
       $group = array(
@@ -251,7 +250,6 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
       $group['save_selected_submit'] = array(
         '#type' => 'submit',
         '#value' => t('Bookmark selected objects'),
-        '#name' => 'save_selected',
         '#weight' => 4,
         '#action_submit' => 'saveSelected',
         '#action_validate' => array(
@@ -262,7 +260,6 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
       $group['save_all_submit'] = array(
         '#type' => 'submit',
         '#value' => t('Bookmark all results'),
-        '#name' => 'save_all',
         '#weight' => 5,
         '#action_submit' => 'saveAll',
         '#action_validate' => array(
@@ -364,12 +361,15 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
     $el = $form_state['complete form']['islandora_bookmark_export']['fieldset']['export_options'];
     $key = drupal_array_get_nested_value($form_state['values'], $el['#parents']);
 
+    $params = array(
+      $pids,
+    );
+
     if (array_key_exists('islandora_bookmark_export_styles_' . $key, $form_state['input'])) {
-      call_user_func($form_state['islandora_bookmark_export'][$key], $pids, $form_state['input']['islandora_bookmark_export_styles_' . $key]);
+      $params[] = $form_state['input']['islandora_bookmark_export_styles_' . $key];
     }
-    else {
-      call_user_func($form_state['islandora_bookmark_export'][$key], $pids);
-    }
+
+    call_user_func_array($form_state['islandora_bookmark_export'][$key], $params);
   }
 
   /**
@@ -429,8 +429,8 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
     module_load_include('inc', 'islandora_bookmark', 'includes/api');
     $bookmark_object = islandora_bookmark_get_bookmark_by_number($key);
 
-    $pids_to_add = array_diff($pids, $bookmark_object->pidList);
-    $skipped_pids = array_intersect($pids, $bookmark_object->pidList);
+    $pids_to_add = array_diff($pids, $bookmark_object->getPids());
+    $skipped_pids = array_intersect($pids, $bookmark_object->getPids());
 
     if (count($pids_to_add) > 0) {
       try {
@@ -465,7 +465,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
   /**
    * Go over any '#action_validate' functions on the clicked button.
    */
-  public function validateForm($form, $form_state) {
+  public function formValidate(&$form, &$form_state) {
     $clicked_button = $form_state['clicked_button'];
     if (isset($clicked_button['#action_validate'])) {
       foreach ((array) $clicked_button['#action_validate'] as $validator) {
@@ -484,7 +484,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
    * @param array $form_state
    *   The Drupal form state.
    */
-  public function submitForm(&$form, &$form_state) {
+  public function formSubmit(&$form, &$form_state) {
     $queries = drupal_get_query_parameters();
 
     $form_state['redirect'] = array(request_path(), array('query' => $queries));
@@ -568,14 +568,14 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
  *   An array containing form structure.
  */
 function islandora_bookmark_results_form($form, &$form_state, $results_class, $object_results) {
-  return $results_class->buildForm($form, $form_state, $object_results);
+  return $results_class->formGet($form, $form_state, $object_results);
 }
 
 /**
  * Form validation handler.
  */
 function islandora_bookmark_results_form_validate(array &$form, array &$form_state) {
-  $form_state['build_info']['args'][0]->validateForm($form, $form_state);
+  $form_state['build_info']['args'][0]->formValidate($form, $form_state);
 }
 
 /**
@@ -587,5 +587,5 @@ function islandora_bookmark_results_form_validate(array &$form, array &$form_sta
  *   The Drupal form state.
  */
 function islandora_bookmark_results_form_submit(array &$form, array &$form_state) {
-  $form_state['build_info']['args'][0]->submitForm($form, $form_state);
+  $form_state['build_info']['args'][0]->formSubmit($form, $form_state);
 }
