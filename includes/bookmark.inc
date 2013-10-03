@@ -486,6 +486,132 @@ abstract class Bookmark implements BookmarkInterface {
       $this->formAddActions($form['bookmarks']['fieldset'], $form_state);
     }
 
+    $this->formAddSecondaryActions($form, $form_state);
+
+    return $form;
+  }
+
+  /**
+   * Add actions to the given section of the form.
+   *
+   * @param array $container
+   *   A reference to a part of the form, where the actions should be added.
+   */
+  protected function formAddActions(&$container, &$form_state) {
+    $groups = array();
+
+    if ($this->managementAccess()) {
+      $groups['remove'] = array(
+        'remove_selected' => array(
+          '#type' => 'submit',
+          '#value' => t('Remove selected'),
+          '#action_validate' => array(
+            'formHasObjectsSelected',
+          ),
+          '#action_submit' => array(
+            'formRemoveSelectedFromList',
+          ),
+        ),
+        'remove_all' => array(
+          '#type' => 'submit',
+          '#value' => t('Remove all'),
+          '#action_submit' => array(
+            'formRemoveAllFromList',
+          ),
+        ),
+      );
+    }
+
+    if (user_access('export islandora bookmarks')) {
+      $export_styles = array();
+      $export = islandora_bookmark_get_export_options();
+      $export_options['default'] = t('- Export type -');
+
+      foreach ($export as $module_name => $export_array) {
+        foreach ($export_array as $name => $export_func) {
+          $export_options[t("@module_name", array("@module_name" => $module_name))][$name] = $name;
+          $form_state['islandora_bookmark_export'][$name] = $export_func;
+          $export_styles[$name] = islandora_bookmark_get_export_format_options($name);
+        }
+      }
+
+      $style_elements = array();
+      foreach ($export_styles as $key => $value) {
+        if (!empty($value)) {
+          $style_elements[$key] = array(
+            '#type' => 'select',
+            '#title' => t('Style'),
+            '#options' => $value,
+            '#weight' => 0,
+            '#name' => 'islandora_bookmark_export_styles_' . $key,
+            '#states' => array(
+              'visible' => array(
+                ':input[name="bookmarks[fieldset][export_options]"]' => array('value' => $key),
+              ),
+            ),
+          );
+        }
+      }
+
+      $groups += array(
+        'export_title' => array(
+          '#markup' => '<h3>' . t('Export') . '</h3>',
+          '#weight' => 3,
+        ),
+        'export_options' => array(
+          '#type' => 'select',
+          '#title' => t('Format'),
+          '#options' => $export_options,
+          '#weight' => 4,
+        ),
+        'format_opts' => array(
+          '#weight' => 5,
+          'export_styles' => $style_elements,
+          'export_selected' => array(
+            '#type' => 'submit',
+            '#value' => t('Export selected @type', array(
+              // XXX: Should be made better for translating... (Not all
+              // languages add an "s" to pluralize).
+              '@type' => variable_get('islandora_bookmark_type', 'bookmark') . 's',
+            )),
+            '#weight' => 5,
+            '#action_validate' => array(
+              'formHasExportTypeSelected',
+              'formHasObjectsSelected',
+            ),
+            '#action_submit' => array(
+              'formExportSelected',
+            ),
+          ),
+          'export_all' => array(
+            '#type' => 'submit',
+            '#value' => t('Export all @type', array(
+              // XXX: Should be made better for translating... (Not all
+              // languages add an "s" to pluralize).
+              '@type' => variable_get('islandora_bookmark_type', 'bookmark') . 's',
+            )),
+            '#weight' => 6,
+            '#action_validate' => array(
+              'formHasExportTypeSelected',
+            ),
+            '#action_submit' => array(
+              'formExportAll',
+            ),
+          ),
+        ),
+      );
+    }
+
+    if (!empty($groups)) {
+      $container += $groups;
+    }
+  }
+
+  /**
+   * Add secondary actions to the form.
+   */
+  protected function formAddSecondaryActions(&$form, &$form_state) {
+    global $user;
     // Share.
     if ($this->managementAccess()) {
       if (user_access('share islandora bookmarks')) {
@@ -656,124 +782,6 @@ abstract class Bookmark implements BookmarkInterface {
         '#value' => t('Remove yourself from this list'),
         '#submit' => array('islandora_bookmark_remove_self'),
       );
-    }
-
-    return $form;
-  }
-
-  /**
-   * Add actions to the given section of the form.
-   *
-   * @param array $container
-   *   A reference to a part of the form, where the actions should be added.
-   */
-  public function formAddActions(&$container, &$form_state) {
-    $groups = array();
-
-    if ($this->managementAccess()) {
-      $groups['remove'] = array(
-        'remove_selected' => array(
-          '#type' => 'submit',
-          '#value' => t('Remove selected'),
-          '#action_validate' => array(
-            'formHasObjectsSelected',
-          ),
-          '#action_submit' => array(
-            'formRemoveSelectedFromList',
-          ),
-        ),
-        'remove_all' => array(
-          '#type' => 'submit',
-          '#value' => t('Remove all'),
-          '#action_submit' => array(
-            'formRemoveAllFromList',
-          ),
-        ),
-      );
-    }
-
-    if (user_access('export islandora bookmarks')) {
-      $export_styles = array();
-      $export = islandora_bookmark_get_export_options();
-      $export_options['default'] = t('- Export type -');
-
-      foreach ($export as $module_name => $export_array) {
-        foreach ($export_array as $name => $export_func) {
-          $export_options[t("@module_name", array("@module_name" => $module_name))][$name] = $name;
-          $form_state['islandora_bookmark_export'][$name] = $export_func;
-          $export_styles[$name] = islandora_bookmark_get_export_format_options($name);
-        }
-      }
-
-      $style_elements = array();
-      foreach ($export_styles as $key => $value) {
-        if (!empty($value)) {
-          $style_elements[$key] = array(
-            '#type' => 'select',
-            '#title' => t('Style'),
-            '#options' => $value,
-            '#weight' => 0,
-            '#name' => 'islandora_bookmark_export_styles_' . $key,
-            '#states' => array(
-              'visible' => array(
-                ':input[name="bookmarks[fieldset][export_options]"]' => array('value' => $key),
-              ),
-            ),
-          );
-        }
-      }
-
-      $groups += array(
-        'export_title' => array(
-          '#markup' => '<h3>' . t('Export') . '</h3>',
-          '#weight' => 3,
-        ),
-        'export_options' => array(
-          '#type' => 'select',
-          '#title' => t('Format'),
-          '#options' => $export_options,
-          '#weight' => 4,
-        ),
-        'format_opts' => array(
-          '#weight' => 5,
-          'export_styles' => $style_elements,
-          'export_selected' => array(
-            '#type' => 'submit',
-            '#value' => t('Export selected @type', array(
-              // XXX: Should be made better for translating... (Not all
-              // languages add an "s" to pluralize).
-              '@type' => variable_get('islandora_bookmark_type', 'bookmark') . 's',
-            )),
-            '#weight' => 5,
-            '#action_validate' => array(
-              'formHasExportTypeSelected',
-              'formHasObjectsSelected',
-            ),
-            '#action_submit' => array(
-              'formExportSelected',
-            ),
-          ),
-          'export_all' => array(
-            '#type' => 'submit',
-            '#value' => t('Export all @type', array(
-              // XXX: Should be made better for translating... (Not all
-              // languages add an "s" to pluralize).
-              '@type' => variable_get('islandora_bookmark_type', 'bookmark') . 's',
-            )),
-            '#weight' => 6,
-            '#action_validate' => array(
-              'formHasExportTypeSelected',
-            ),
-            '#action_submit' => array(
-              'formExportAll',
-            ),
-          ),
-        ),
-      );
-    }
-
-    if (!empty($groups)) {
-      $container += $groups;
     }
   }
 
