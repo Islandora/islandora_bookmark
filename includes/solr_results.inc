@@ -491,8 +491,9 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
 
     $clicked_button = $form_state['clicked_button'];
     if (isset($clicked_button['#action_submit'])) {
+      $params = array(&$form_state);
       foreach ((array) $clicked_button['#action_submit'] as $submit_function) {
-        call_user_func(array($this, $submit_function), $form_state);
+        call_user_func_array(array($this, $submit_function), $params);
       }
     }
   }
