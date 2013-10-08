@@ -92,18 +92,17 @@ class BookmarkDatabase extends Bookmark {
   }
 
   /**
-   * Branch to different classes based on type.
+   * Refer to parent docs.
    *
-   * Falls back to the current class if a mapping for the type does not exist.
-   *
-   * @param mixed $id
-   *   A bookmark list ID.
-   *
-   * @return Bookmark|NULL
-   *   A subclass of Bookmark, to which we can add and remove items, or NULL if
-   *   there is an error.
+   * Branch to different classes based on type. Return NULL if a mapping for
+   * the given type is not available.
    */
-  public static function getList($id) {
+  public static function getList($id, $force_session_attempt = FALSE) {
+    if ($force_session_attempt) {
+      // Call the parent, which should call this with FALSE if not a session...
+      return parent::getList($id, $force_session_attempt);
+    }
+
     $types = module_invoke_all('islandora_bookmark_database_types');
     $type = db_select('islandora_bookmark_list_names', 'n')
       ->fields('n', array('type'))
