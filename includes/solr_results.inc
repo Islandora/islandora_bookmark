@@ -290,7 +290,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
    *
    * Checks that the export action has an export type selected.
    */
-  protected function hasExportTypeSelected($form, $form_state) {
+  protected function hasExportTypeSelected($form, &$form_state) {
     $el = $form['islandora_bookmark_export']['fieldset']['export_options'];
     $key = drupal_array_get_nested_value($form_state['values'], $el['#parents']);
     if ($key == 'default') {
@@ -303,7 +303,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
    *
    * Checks that the bookmark save/view action has a list selected.
    */
-  protected function hasListSelected($form, $form_state) {
+  protected function hasListSelected($form, &$form_state) {
     $el = $form['islandora_bookmark_save_fieldset']['fieldset']['save_options'];
     $key = drupal_array_get_nested_value($form_state['values'], $el['#parents']);
     if ($key == 'default') {
@@ -316,7 +316,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
    *
    * Checks that some objects are selected.
    */
-  protected function hasObjectsSelected($form, $form_state) {
+  protected function hasObjectsSelected($form, &$form_state) {
     $pids = $this->getSelected($form_state);
     if (empty($pids)) {
       form_set_error('islandora_bookmark_table', t('You must select at least one object.'));
@@ -331,7 +331,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
    * @param array $form_state
    *   The array of form state.
    */
-  protected function exportAll($form_state) {
+  protected function exportAll(&$form_state) {
     $pids = $this->getAll($form_state);
     $this->export($pids, $form_state);
   }
@@ -344,7 +344,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
    * @param array $form_state
    *   The array of form state.
    */
-  protected function exportSelected($form_state) {
+  protected function exportSelected(&$form_state) {
     $pids = $this->getSelected($form_state);
     $this->export($pids, $form_state);
   }
@@ -357,7 +357,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
    * @param array $form_state
    *   The array of form state.
    */
-  protected function export($pids, $form_state) {
+  protected function export($pids, &$form_state) {
     $el = $form_state['complete form']['islandora_bookmark_export']['fieldset']['export_options'];
     $key = drupal_array_get_nested_value($form_state['values'], $el['#parents']);
 
@@ -380,7 +380,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
    * @param array $form_state
    *   The array of form state.
    */
-  protected function goToBookmark($form_state) {
+  protected function goToBookmark(&$form_state) {
     $el = $form_state['complete form']['islandora_bookmark_save_fieldset']['fieldset']['save_options'];
     $key = drupal_array_get_nested_value($form_state['values'], $el['#parents']);
     drupal_goto('islandora-bookmark/listid/' . $key);
@@ -394,7 +394,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
    * @param array $form_state
    *   The array of form state.
    */
-  protected function saveAll($form_state) {
+  protected function saveAll(&$form_state) {
     $pids = $this->getAll($form_state);
     $this->save($pids, $form_state);
   }
@@ -407,7 +407,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
    * @param array $form_state
    *   The array of form state.
    */
-  protected function saveSelected($form_state) {
+  protected function saveSelected(&$form_state) {
     $pids = $this->getSelected($form_state);
     $this->save($pids, $form_state);
   }
@@ -420,7 +420,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
    * @param array $form_state
    *   The array of form state.
    */
-  protected function save($pids, $form_state) {
+  protected function save($pids, &$form_state) {
     $el = $form_state['complete form']['islandora_bookmark_save_fieldset']['fieldset']['save_options'];
     $key = drupal_array_get_nested_value($form_state['values'], $el['#parents']);
 
@@ -501,7 +501,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
   /**
    * Submission helper; gets the PIDs all results.
    */
-  protected function getAll($form_state) {
+  protected function getAll(&$form_state) {
     $pids = array();
 
     // Helper anonymous function... Just get the PID.
@@ -538,7 +538,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
   /**
    * Submission helper; gets the PIDs of the selected results.
    */
-  protected function getSelected($form_state) {
+  protected function getSelected(&$form_state) {
     $selected = array_filter($form_state['values']['islandora_bookmark_table']);
     $functional = array_filter($selected, 'islandora_object_load');
     $broken = array_diff($selected, $functional);
