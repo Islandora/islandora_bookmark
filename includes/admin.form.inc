@@ -18,6 +18,11 @@
  */
 function islandora_bookmark_admin_settings(array $form, array &$form_state) {
   $form = array(
+    'list_type' => array(
+      '#type' => 'textfield',
+      '#title' => t('The name of the type of list.'),
+      '#default_value' => variable_get('islandora_bookmark_type', 'bookmark'),
+    ),
     'overview_page_elements' => array(
       '#type' => 'textfield',
       '#title' => t('Bookmarks overview table'),
@@ -62,11 +67,13 @@ function islandora_bookmark_admin_settings_submit(array $form, array &$form_stat
     case 'edit-submit':
       variable_set('islandora_bookmark_overview_page_elements', $form_state['values']['overview_page_elements']);
       variable_set('islandora_bookmark_detailed_page_elements', $form_state['values']['detailed_page_elements']);
+      variable_set('islandora_bookmark_type', $form_state['values']['list_type']);
       break;
 
     case 'edit-reset':
       variable_del('islandora_bookmark_overview_page_elements');
       variable_del('islandora_bookmark_detailed_page_elements');
+      variable_del('islandora_bookmark_type');
       break;
   }
 }

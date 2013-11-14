@@ -16,64 +16,23 @@
 function islandora_bookmark_get_user_owned_bookmarks() {
   global $user;
 
-  $listids = array();
+  $list_query = db_query('SELECT DISTINCT listid FROM {islandora_bookmark_list_names} WHERE listowner = :uid ORDER BY listid', array(':uid' => $user->uid));
+  $listids = (array) $list_query->fetchAll(PDO::FETCH_COLUMN);
+
   $bookmark_list = array();
-
-  $list_query = db_query('SELECT listid FROM {islandora_bookmark_list_names} WHERE listowner = :uid ORDER BY listid', array(':uid' => $user->uid));
-
-  foreach ($list_query as $record) {
-    if (!in_array($record->listid, $listids)) {
-      $listids[] = $record->listid;
-    }
-  }
-
-  foreach ($listids as $key => $value) {
-    $listpids = array();
-    $listusers = array();
-
-    $pid_query = db_query('SELECT pidid FROM {islandora_bookmark_list_pids} WHERE listid = :listid', array(':listid' => $value));
-
-    foreach ($pid_query as $record) {
-      $listpids[] = $record->pidid;
-    }
-
-    $user_query = db_query('SELECT uid FROM {islandora_bookmark_list_users} WHERE listid = :listid', array(':listid' => $value));
-
-    foreach ($user_query as $record) {
-      $listusers[] = $record->uid;
-    }
-
-    $list_record = db_query('SELECT listname, listowner from {islandora_bookmark_list_names} WHERE listid = :listid', array(':listid' => $value))->fetchObject();
-    $listid = $value;
-
-    $params = array(
-      'retrieve' => TRUE,
-      'user_id' => $user->uid,
-      'bookmark_owner' => $list_record->listowner,
-      'bookmark_users' => $listusers,
-      'bookmark_pids' => $listpids,
-      'bookmark_name' => $list_record->listname,
-      'bookmark_id' => $listid,
-    );
-    $templist = new Bookmark($params);
+  foreach ($listids as $list_id) {
+    $templist = BookmarkDatabase::getList($list_id);
 
     $bookmark_list[] = $templist;
   }
 
   // User is anon, use session as well.
-  if ($user->uid == 0 && !empty($_SESSION['islandora_bookmark'])) {
-    foreach ($_SESSION['islandora_bookmark'] as $value) {
-      if (isset($pid)) {
-        $templist = unserialize($value);
-        if (in_array($pid, $templist->pidList)) {
-          $bookmark_list[] = $templist;
-        }
-      }
-      else {
-        $bookmark_list[] = unserialize($value);
-      }
+  if (isset($_SESSION) && $user->uid == 0 && !empty($_SESSION['islandora_bookmark'])) {
+    foreach (array_keys($_SESSION['islandora_bookmark']) as $id) {
+      $bookmark_list[] = BookmarkSession::getList($id);
     }
   }
+
   return $bookmark_list;
 }
 
@@ -96,46 +55,18 @@ function islandora_bookmark_get_user_shared_bookmarks() {
   foreach ($owner_query as $record) {
     $owner_ids[] = $record->listid;
   }
-  $shared_query = db_query('SELECT listid FROM {islandora_bookmark_list_users} WHERE uid = :uid ORDER BY listid', array(':uid' => $user->uid));
+  $shared_query = db_query('SELECT listid FROM {islandora_bookmark_list_users} WHERE uid = :uid OR uid = 0 ORDER BY listid', array(':uid' => $user->uid));
 
   foreach ($shared_query as $record) {
     $shared_ids[] = $record->listid;
   }
   $shared_ids = array_diff($shared_ids, $owner_ids);
 
-  foreach ($shared_ids as $key => $value) {
-
-    $listpids = array();
-    $listusers = array();
-
-    $pid_query = db_query('SELECT pidid FROM {islandora_bookmark_list_pids} WHERE listid = :listid', array(':listid' => $value));
-
-    foreach ($pid_query as $record) {
-      $listpids[] = $record->pidid;
-    }
-
-    $user_query = db_query('SELECT uid FROM {islandora_bookmark_list_users} WHERE listid = :listid', array(':listid' => $value));
-
-    foreach ($user_query as $record) {
-      $listusers[] = $record->uid;
-    }
-
-    $list_record = db_query('SELECT listname, listowner from {islandora_bookmark_list_names} WHERE listid = :listid', array(':listid' => $value))->fetchObject();
-    $listid = $value;
-
-    $params = array(
-      'retrieve' => TRUE,
-      'user_id' => $user->uid,
-      'bookmark_owner' => $list_record->listowner,
-      'bookmark_users' => $listusers,
-      'bookmark_pids' => $listpids,
-      'bookmark_name' => $list_record->listname,
-      'bookmark_id' => $listid,
-    );
-    $templist = new Bookmark($params);
+  foreach ($shared_ids as $id) {
+    $templist = Bookmark::getList($id);
     $bookmark_list[] = $templist;
   }
-  return $bookmark_list;
+  return array_filter($bookmark_list);
 }
 
 /**
@@ -146,46 +77,15 @@ function islandora_bookmark_get_user_shared_bookmarks() {
  * @param int $listid
  *   List ID to be searched for.
  *
- * @return PidList
- *   PidList object.
+ * @return bool|PidList
+ *   PidList object or FALSE if the list does not exist.
  */
 function islandora_bookmark_get_bookmark_by_number($listid) {
-  global $user;
-
-  if (!preg_match('/session_/', $listid)) {
-    $listresult = db_query('SELECT listname, listowner from {islandora_bookmark_list_names} WHERE listid = :listid', array(':listid' => $listid))->fetchObject();
-
-    $userresult = db_query('SELECT uid from {islandora_bookmark_list_users} WHERE listid = :listid', array(':listid' => $listid));
-
-    $userlist = array();
-
-    foreach ($userresult as $record) {
-      array_push($userlist, $record->uid);
-    }
-
-    $pidresult = db_query('SELECT pidid from {islandora_bookmark_list_pids} WHERE listid = :listid', array(':listid' => $listid));
-    $pidlist = array();
-
-    foreach ($pidresult as $record) {
-      array_push($pidlist, $record->pidid);
-    }
-
-    $params = array(
-      'retrieve' => TRUE,
-      'user_id' => $user->uid,
-      'bookmark_owner' => $listresult->listowner,
-      'bookmark_name' => $listresult->listname,
-      'bookmark_id' => $listid,
-      'bookmark_users' => $userlist,
-      'bookmark_pids' => $pidlist,
-    );
-    $templist = new Bookmark($params);
-
+  $list = Bookmark::getList($listid);
+  if ($list === NULL) {
+    return FALSE;
   }
-  else {
-    $templist = unserialize($_SESSION['islandora_bookmark'][$listid]);
-  }
-  return $templist;
+  return $list;
 }
 
 /**
@@ -204,18 +104,54 @@ function islandora_bookmark_get_bookmarks_visible_to_user($pid, $uid) {
   // SESSION FIRST.
   if ($uid == 0 && !empty($_SESSION['islandora_bookmark'])) {
     foreach ($_SESSION['islandora_bookmark'] as $value) {
-      $templist = unserialize($value);
-      if (in_array($pid, $templist->pidList)) {
-        $lists[$templist->bookmarkId] = $templist->bookmarkId;
+      $templist = $value;
+      if (in_array($pid, $templist->getPids())) {
+        $lists[$templist->getId()] = $templist->getId();
       }
     }
   }
   else {
     // DB.
-    $list_result = db_query('SELECT u.listid from {islandora_bookmark_list_users} as u INNER JOIN {islandora_bookmark_list_pids} as p ON u.listid = p.listid WHERE uid = :uid AND pidid = :pid', array(':uid' => $uid, ':pid' => $pid));
-    foreach ($list_result as $record) {
-      $lists[$record->listid] = $record->listid;
-    }
+    $q = <<<EOQ
+SELECT u.listid
+FROM {islandora_bookmark_list_users} as u INNER JOIN
+  {islandora_bookmark_list_pids} as p ON u.listid = p.listid INNER JOIN
+  {islandora_bookmark_list_names} as n ON u.listid = n.listid
+WHERE p.pidid = :pid AND :uid IN (u.uid, n.listowner)
+EOQ;
+    $list_result = db_query($q, array(':uid' => $uid, ':pid' => $pid))
+      ->fetchAll(PDO::FETCH_COLUMN);
+    $lists += drupal_map_assoc($list_result);
   }
   return $lists;
+}
+
+/**
+ * Retrieves all the pids from the bookmark list id.
+ *
+ * @param string $value
+ *   The listid.
+ *
+ * @return array
+ *   An array containing listpids.
+ */
+function islandora_bookmark_list_pids_query($value) {
+  $list = Bookmark::getList($value);
+  return $list->getPids();
+}
+
+/**
+ * Retrieves all the uids from the bookmark listid, including owner.
+ *
+ * @param string $value
+ *   The listid.
+ *
+ * @return array
+ *   An array containing user ids.
+ */
+function islandora_bookmark_list_users_query($value) {
+  $list = Bookmark::getList($value);
+  $users = $list->getUsers();
+  $users[] = $list->bookmarkOwner;
+  return $users;
 }
