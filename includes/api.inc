@@ -159,8 +159,8 @@ function islandora_bookmark_list_users_query($value) {
 /**
  * Determines whether the user has a BookmarkDefaultList or not.
  *
- * @param stdClass $user
- *   Optional user object ifw e are checking for a specific user.
+ * @param object $user
+ *   Optional user object if we are checking for a specific user.
  *
  * @return int|bool
  *   The ID of the list if they do have one, FALSE otherwise.
