@@ -69,7 +69,7 @@ function islandora_bookmark_admin_settings(array $form, array &$form_state) {
 }
 
 /**
- * Validation function for the Bookmark admin form..
+ * Validation function for the Bookmark admin form.
  *
  * @param array $form
  *   The Drupal form definition.
