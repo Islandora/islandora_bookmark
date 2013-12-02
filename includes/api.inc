@@ -155,3 +155,31 @@ function islandora_bookmark_list_users_query($value) {
   $users[] = $list->bookmarkOwner;
   return $users;
 }
+
+/**
+ * Determines whether the user has a BookmarkDefaultList or not.
+ *
+ * @param stdObject $user
+ *   Optional user object ifw e are checking for a specific user.
+ *
+ * @return int|bool
+ *   The ID of the list if they do have one, FALSE otherwise.
+ */
+function islandora_bookmark_get_default_list($user = NULL) {
+  if (!$user) {
+    global $user;
+  }
+  $result = db_query('SELECT listid FROM {islandora_bookmark_list_names} WHERE listowner = :owner AND type = :type',
+    array(
+      ':owner' => $user->uid,
+      ':type' => 'bookmark_default',
+    )
+  );
+  $total_results = $result->fetchField();
+  if (empty($total_results)) {
+    return FALSE;
+  }
+  else {
+    return $total_results;
+  }
+}

@@ -100,12 +100,20 @@ abstract class Bookmark implements BookmarkInterface {
   protected $isPersistent;
 
   /**
+   * Flag whether the object can be deleted or not.
+   *
+   * @var bool
+   */
+  protected $isDeletable;
+
+  /**
    * Constructor for the Bookmark object.
    */
   public function __construct($id, $name, $owner) {
     $this->bookmarkId = $id;
     $this->bookmarkName = $name;
     $this->bookmarkOwner = $owner;
+    $this->isDeletable = TRUE;
   }
 
   /**
@@ -166,6 +174,16 @@ abstract class Bookmark implements BookmarkInterface {
    */
   public function getIsPersistent() {
     return $this->isPersistent;
+  }
+
+  /**
+   * Accessor for whether the object is deletable.
+   *
+   * @return mixed
+   *   The value of $this->isDeletable.
+   */
+  public function getIsDeletable() {
+    return $this->isDeletable;
   }
 
   /**

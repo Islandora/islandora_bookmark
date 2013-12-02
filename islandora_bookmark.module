@@ -250,6 +250,17 @@ function islandora_bookmark_user_login(&$edit, $account) {
     }
     unset($_SESSION['islandora_bookmark']);
   }
+  if (variable_get('islandora_bookmark_create_user_default_lists', FALSE)) {
+    // Check if the user already has a default list made. If not create them
+    // one.
+    module_load_include('inc', 'islandora_bookmark', 'includes/api');
+    $default_list_exists = islandora_bookmark_get_default_list();
+    if (!$default_list_exists) {
+      $default_list_name = variable_get('islandora_bookmark_default_list_name', "@username's Default List");
+      $default_list_name = format_string($default_list_name, array('@username' => $account->name));
+      BookmarkDefaultList::createNewList($default_list_name, 'bookmark_default', $account);
+    }
+  }
 }
 
 /**
@@ -569,13 +580,13 @@ function islandora_bookmark_detailed_form_manage(array $form, array &$form_state
       '#value' => t('Save'),
       '#submit' => array('islandora_bookmark_update_bookmark'),
     );
-
-    $form['bookmarks']['management']['remove'] = array(
-      '#type' => 'submit',
-      '#value' => t('Delete list'),
-      '#submit' => array('islandora_bookmark_delete_bookmark'),
-    );
-
+    if ($bookmark->getIsDeletable()) {
+      $form['bookmarks']['management']['remove'] = array(
+        '#type' => 'submit',
+        '#value' => t('Delete list'),
+        '#submit' => array('islandora_bookmark_delete_bookmark'),
+      );
+    }
     $form['bookmarks']['management']['list-id'] = array(
       '#type' => 'value',
       '#value' => $bookmark->getId(),
@@ -1086,5 +1097,6 @@ function islandora_bookmark_islandora_object_purged($pid) {
 function islandora_bookmark_islandora_bookmark_database_types() {
   return array(
     'bookmark' => 'BookmarkDatabase',
+    'bookmark_default' => 'BookmarkDefaultList',
   );
 }
