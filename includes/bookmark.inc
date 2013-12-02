@@ -20,6 +20,12 @@ interface BookmarkInterface {
   /**
    * Get PIDs associated with this list.
    *
+   * @param int $offset
+   *   The starting offset of pids to retrieve.
+   *
+   * @param int $limit
+   *   The number of pids to retrieve.
+   *
    * @return array
    *   An array of string, each representing an ID in a list.
    */
@@ -303,6 +309,9 @@ abstract class Bookmark implements BookmarkInterface {
    *
    * @param string $name
    *   A name for the newly created list.
+   *
+   * @return BookmarkSession|BookmarkDatabase
+   *   The BookmarkSession or BookmarkDatabase object that is created.
    */
   public static function createNewList($name) {
     global $user;
@@ -421,7 +430,6 @@ abstract class Bookmark implements BookmarkInterface {
    * Form building method.
    */
   public function formGet($form, &$form_state) {
-    global $user;
     if (module_exists('citation_exporter')) {
       if (CitationExporter::ReadyToExport()) {
         $citation_export_head = array(
@@ -471,8 +479,6 @@ abstract class Bookmark implements BookmarkInterface {
       );
     }
 
-    $rows = array();
-
     // Do pager calcuations to limit the number of objects displayed per page.
     $num_eles = variable_get('islandora_bookmark_detailed_page_elements', 10);
     $num_pids = $this->getPidCount();
@@ -514,6 +520,8 @@ abstract class Bookmark implements BookmarkInterface {
    *
    * @param array $container
    *   A reference to a part of the form, where the actions should be added.
+   * @param array $form_state
+   *   The Drupal form state.
    */
   protected function formAddActions(&$container, &$form_state) {
     $groups = array();
@@ -912,6 +920,9 @@ abstract class Bookmark implements BookmarkInterface {
 
   /**
    * Get the PIDs of any single remove button(s).
+   *
+   * @param array $form_state
+   *   The Drupal form state.
    *
    * @return array
    *   An array of PIDs--may be empty if there are none present.

@@ -277,6 +277,8 @@ function islandora_bookmark_delete_bookmark(array $form, array &$form_state) {
  *   The Drupal form definition.
  * @param array $form_state
  *   The Drupal form state.
+ * @param string $list_id
+ *   The list id of the Bookmark object we are going to delete.
  *
  * @return array
  *   The Drupal form definition.
@@ -329,6 +331,8 @@ function islandora_bookmark_remove_self(array $form, array &$form_state) {
  *   The Drupal form definition.
  * @param array $form_state
  *   The Drupal form state.
+ * @param string $list_id
+ *   The list id of the Bookmark object we are removing from.
  *
  * @return array
  *   The Drupal form definition.
@@ -348,7 +352,7 @@ function islandora_bookmark_remove_self_confirm(array $form, array &$form_state,
 /**
  * Submit handler for removing self from a Bookmark.
  *
- * @global type $user
+ * @global stdClass $user
  *
  * @param array $form
  *   The Drupal form definition.
@@ -396,6 +400,11 @@ function islandora_bookmark_update_bookmark(array $form, array &$form_state) {
  *
  * @param string $pid
  *   The PID of the object to create markup for.
+ * @param array $object_url_info
+ *   An associative array contains information to build an anchor tag.
+ *   - path: A string containing the path/
+ *   - params: An array of paramaters to be passed.
+ *   - markup: A string containing the label for the anchor tag.
  *
  * @return string
  *   The markup for the Fedora object in the table.
@@ -601,6 +610,9 @@ function islandora_bookmark_detailed_form_manage(array $form, array &$form_state
  *
  * @param string $pid
  *   PID to pass to the form. PID is gathered from url.
+ *
+ * @return string|NULL
+ *   The markup of the object form or NULL otherwise.
  */
 function islandora_bookmark_get_object_form($pid = NULL) {
   $object_form = drupal_get_form('islandora_bookmark_fedora_repository_object_form', $pid);
@@ -618,12 +630,12 @@ function islandora_bookmark_get_object_form($pid = NULL) {
  *
  * Also, gives the ability to add the object to a Bookmark.
  *
- * @global type $user
- *
  * @param array $form
  *   The Drupal form definition.
  * @param array $form_state
  *   The Drupal form state.
+ * @param string $pid
+ *   The pid of the object which we are currently viewing.
  *
  * @return array
  *   The Drupal form definition.
@@ -779,7 +791,7 @@ function islandora_bookmark_export_pids_as_csv($pids) {
 /**
  * Form constructor for the Bookmark overview form.
  *
- * @global type $user
+ * @global stdClass $user
  *
  * @param array $form
  *   The Drupal form definition.
@@ -913,7 +925,7 @@ function islandora_bookmark_form_overview_table(array $bookmark_objs) {
 /**
  * Form constructor for the add Bookmark form.
  *
- * @global type $user
+ * @global stdClass $user
  *
  * @param array $form
  *   The Drupal form definition.
@@ -947,7 +959,7 @@ function islandora_bookmark_add_form(array $form, array &$form_state) {
 /**
  * Form submission handler for the islandora_bookmark_add_form().
  *
- * @global type $user
+ * @global stdClass $user
  *
  * @param array $form
  *   The Drupal form definition.

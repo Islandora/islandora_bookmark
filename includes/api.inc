@@ -8,7 +8,7 @@
 /**
  * Retrieves lists that the specified user has access to.
  *
- * @global type $user
+ * @global stdClass $user
  *
  * @return array
  *   An array of PidList objects.
@@ -39,7 +39,7 @@ function islandora_bookmark_get_user_owned_bookmarks() {
 /**
  * Retrieves all Bookmarks the current user is shared on.
  *
- * @global type $user
+ * @global stdClass $user
  * @return array
  *   An array of Bookmarks.
  */
@@ -72,12 +72,12 @@ function islandora_bookmark_get_user_shared_bookmarks() {
 /**
  * Retrieves a Bookmark given a specified ID.
  *
- * @global type $user
+ * @global stdClass $user
  *
  * @param int $listid
  *   List ID to be searched for.
  *
- * @return bool|PidList
+ * @return bool|Bookmark
  *   PidList object or FALSE if the list does not exist.
  */
 function islandora_bookmark_get_bookmark_by_number($listid) {
@@ -159,7 +159,7 @@ function islandora_bookmark_list_users_query($value) {
 /**
  * Determines whether the user has a BookmarkDefaultList or not.
  *
- * @param stdObject $user
+ * @param stdClass $user
  *   Optional user object ifw e are checking for a specific user.
  *
  * @return int|bool
