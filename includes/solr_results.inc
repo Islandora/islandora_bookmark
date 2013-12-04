@@ -140,6 +140,9 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
   /**
    * Get the "actions" section of the form.
    *
+   * @param array $form_state
+   *   The Drupal form state.
+   *
    * @return array
    *   A form fragment containing a number of actions which might be performed
    *   on objects from the table select.
