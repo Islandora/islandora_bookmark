@@ -43,12 +43,14 @@ Table cells referencing the bookmarked objects in both bookmark lists and bookma
 One way is by overriding the default template file located at theme/islandora-bookmark-object-display.tpl.php.
 Another way is to use hook_islandora_bookmark_object_markup() to let another module define the content and markup.
 
+The admin page has an option that allows for a singular, default Bookmark list be created for each individual user.
+This list differs in the fact that it cannot be deleted.
 
 TROUBLESHOOTING
 ---------------
 
  * How do I set up bookmarking through Solr?
- 
+
 Islandora Bookmark provides a Islandora Solr primary display which has to be enabled in the solr client admin page
 (admin/islandora/search/islandora_solr). To set up Islandora Solr check the module's documentation. Islandora Solr comes
 with a 'Display switch' block which lets you switch primary displays. When enabled, the bookmark display can be accessed

@@ -143,6 +143,11 @@ function islandora_bookmark_delete_bookmark_access($list_id) {
     $bookmark_access = TRUE;
   }
   else {
+    module_load_include('inc', 'islandora_bookmark', 'includes/api');
+    $default_list = islandora_bookmark_get_default_list();
+    if ($default_list == $list_id) {
+      return FALSE;
+    }
     $bookmark_access = FALSE;
     $owner_query = db_query('SELECT listowner FROM {islandora_bookmark_list_names} WHERE listid = :listid ORDER BY listid', array(':listid' => $list_id))->fetchObject();
 
