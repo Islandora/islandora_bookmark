@@ -33,7 +33,7 @@ class BookmarkSession extends Bookmark {
   }
 
   /**
-   * Constructor for the Bookmark object.
+   * Constructor for the BookmarkSession object.
    */
   public function __construct($name) {
     global $user;

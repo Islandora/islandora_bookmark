@@ -27,12 +27,17 @@ function islandora_bookmark_get_user_owned_bookmarks() {
   }
 
   // User is anon, use session as well.
-  if (isset($_SESSION) && $user->uid == 0 && !empty($_SESSION['islandora_bookmark'])) {
-    foreach (array_keys($_SESSION['islandora_bookmark']) as $id) {
-      $bookmark_list[] = BookmarkSession::getList($id);
+  if ($user->uid == 0) {
+    if (!isset($_SESSION) || empty($_SESSION['islandora_bookmark']) && variable_get('islandora_bookmark_create_user_default_lists', FALSE)) {
+      BookmarkDefaultSessionList::createNewList(t('My Default List'), 'bookmark_default', $user);
+    }
+
+    if (!empty($_SESSION['islandora_bookmark'])) {
+      foreach (array_keys($_SESSION['islandora_bookmark']) as $id) {
+        $bookmark_list[] = BookmarkSession::getList($id);
+      }
     }
   }
-
   return $bookmark_list;
 }
 
@@ -102,7 +107,10 @@ function islandora_bookmark_get_bookmark_by_number($listid) {
 function islandora_bookmark_get_bookmarks_visible_to_user($pid, $uid) {
   $lists = array();
   // SESSION FIRST.
-  if ($uid == 0 && !empty($_SESSION['islandora_bookmark'])) {
+  if ($uid == 0) {
+    if (!isset($_SESSION) || empty($_SESSION['islandora_bookmark']) && variable_get('islandora_bookmark_create_user_default_lists', FALSE)) {
+      BookmarkDefaultSessionList::createNewList(t('My Default List'), 'bookmark_default', NULL);
+    }
     foreach ($_SESSION['islandora_bookmark'] as $value) {
       $templist = $value;
       if (in_array($pid, $templist->getPids())) {
@@ -157,7 +165,7 @@ function islandora_bookmark_list_users_query($value) {
 }
 
 /**
- * Determines whether the user has a BookmarkDefaultList or not.
+ * Determines whether the user has a BookmarkDefaultDatabaseList or not.
  *
  * @param object $user
  *   Optional user object if we are checking for a specific user.

@@ -250,7 +250,25 @@ function islandora_bookmark_theme() {
 function islandora_bookmark_user_login(&$edit, $account) {
   if (!empty($_SESSION['islandora_bookmark'])) {
     foreach ($_SESSION['islandora_bookmark'] as $bookmark_session) {
-      $persistent_bookmark = BookmarkDatabase::createNewList($bookmark_session->bookmarkName, 'bookmark', $account);
+      // If the list is deletable we can proceed as normal as it's not a
+      // default list.
+      if ($bookmark_session->getIsDeletable()) {
+        $persistent_bookmark = BookmarkDatabase::createNewList($bookmark_session->bookmarkName, 'bookmark', $account);
+      }
+      else {
+        module_load_include('inc', 'islandora_bookmark', 'includes/api');
+        $default_list = islandora_bookmark_get_default_list($account);
+        // A BookmarkDatabaseDefaultList already exists for this user, we will
+        // attempt to append on the PIDs.
+        if ($default_list) {
+          $persistent_bookmark = Bookmark::getList($default_list);
+        }
+        else {
+          $default_list_name = variable_get('islandora_bookmark_default_list_name', "@username's Default List");
+          $default_list_name = format_string($default_list_name, array('@username' => $account->name));
+          $persistent_bookmark = BookmarkDefaultDatabaseList::createNewList($default_list_name, 'bookmark_default', $account);
+        }
+      }
       $persistent_bookmark->addPids($bookmark_session->getPids());
     }
     unset($_SESSION['islandora_bookmark']);
@@ -263,7 +281,7 @@ function islandora_bookmark_user_login(&$edit, $account) {
     if (!$default_list_exists) {
       $default_list_name = variable_get('islandora_bookmark_default_list_name', "@username's Default List");
       $default_list_name = format_string($default_list_name, array('@username' => $account->name));
-      BookmarkDefaultList::createNewList($default_list_name, 'bookmark_default', $account);
+      BookmarkDefaultDatabaseList::createNewList($default_list_name, 'bookmark_default', $account);
     }
   }
 }
@@ -1114,6 +1132,6 @@ function islandora_bookmark_islandora_object_purged($pid) {
 function islandora_bookmark_islandora_bookmark_database_types() {
   return array(
     'bookmark' => 'BookmarkDatabase',
-    'bookmark_default' => 'BookmarkDefaultList',
+    'bookmark_default' => 'BookmarkDefaultDatabaseList',
   );
 }

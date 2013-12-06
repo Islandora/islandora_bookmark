@@ -216,7 +216,6 @@ abstract class Bookmark implements BookmarkInterface {
       // Pass off to BookmarkDatabase.
       $bookmark = BookmarkDatabase::getList($id, FALSE);
     }
-
     return $bookmark;
   }
 
