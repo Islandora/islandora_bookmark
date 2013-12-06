@@ -185,7 +185,6 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
             '#title' => t('Style'),
             '#options' => $export_styles[$key],
             '#weight' => 4,
-            '#name' => 'islandora_bookmark_export_styles_' . $key,
             '#states' => array(
               'visible' => array(
                 ':input[name="export_options"]' => array('value' => $key),
@@ -331,10 +330,12 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
    *
    * Export all PIDs the search yielded.
    *
+   * @param array $form
+   *   The array representing a Drupal form.
    * @param array $form_state
    *   The array of form state.
    */
-  protected function exportAll(&$form_state) {
+  protected function exportAll(&$form, &$form_state) {
     $pids = $this->getAll($form_state);
     $this->export($pids, $form_state);
   }
@@ -344,10 +345,12 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
    *
    * Export the selected PIDs the search yielded.
    *
+   * @param array $form
+   *   The array representing a Drupal form.
    * @param array $form_state
    *   The array of form state.
    */
-  protected function exportSelected(&$form_state) {
+  protected function exportSelected(&$form, &$form_state) {
     $pids = $this->getSelected($form_state);
     $this->export($pids, $form_state);
   }
@@ -367,9 +370,8 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
     $params = array(
       $pids,
     );
-
-    if (array_key_exists('islandora_bookmark_export_styles_' . $key, $form_state['input'])) {
-      $params[] = $form_state['input']['islandora_bookmark_export_styles_' . $key];
+    if (array_key_exists($key, $form_state['values'])) {
+      $params[] = $form_state['values'][$key];
     }
 
     call_user_func_array($form_state['islandora_bookmark_export'][$key], $params);
@@ -380,10 +382,12 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
    *
    * Redirect to the given list.
    *
+   * @param array $form
+   *   The array representing a Drupal form.
    * @param array $form_state
    *   The array of form state.
    */
-  protected function goToBookmark(&$form_state) {
+  protected function goToBookmark(&$form, &$form_state) {
     $el = $form_state['complete form']['islandora_bookmark_save_fieldset']['fieldset']['save_options'];
     $key = drupal_array_get_nested_value($form_state['values'], $el['#parents']);
     drupal_goto('islandora-bookmark/listid/' . $key);
@@ -394,10 +398,12 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
    *
    * Save all PIDs the search yielded to the selected list.
    *
+   * @param array $form
+   *   The array representing a Drupal form.
    * @param array $form_state
    *   The array of form state.
    */
-  protected function saveAll(&$form_state) {
+  protected function saveAll(&$form, &$form_state) {
     $pids = $this->getAll($form_state);
     $this->save($pids, $form_state);
   }
@@ -407,10 +413,12 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
    *
    * Save the selected PIDs the search yielded to the selected list.
    *
+   * @param array $form
+   *   The array representing a Drupal form.
    * @param array $form_state
    *   The array of form state.
    */
-  protected function saveSelected(&$form_state) {
+  protected function saveSelected(&$form, &$form_state) {
     $pids = $this->getSelected($form_state);
     $this->save($pids, $form_state);
   }
@@ -455,8 +463,8 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
     if (count($skipped_pids) > 0) {
       drupal_set_message(format_plural(
         count($skipped_pids),
-        'The selected object (!skipped_pids) was not added as it already exists in the bookmark list "@listname".',
-        'The selected objects (!skipped_pids) were not added as they already exist in the bookmark list "@listname".',
+        'The selected object (@skipped_pids) was not added as it already exists in the bookmark list "@listname".',
+        'The selected objects (@skipped_pids) were not added as they already exist in the bookmark list "@listname".',
         array(
           '@skipped_pids' => implode(' ', $skipped_pids),
           '@listname' => $bookmark_object->bookmarkName,
@@ -494,7 +502,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
 
     $clicked_button = $form_state['clicked_button'];
     if (isset($clicked_button['#action_submit'])) {
-      $params = array(&$form_state);
+      $params = array(&$form, &$form_state);
       foreach ((array) $clicked_button['#action_submit'] as $submit_function) {
         call_user_func_array(array($this, $submit_function), $params);
       }
