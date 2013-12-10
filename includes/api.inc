@@ -121,10 +121,10 @@ function islandora_bookmark_get_bookmarks_visible_to_user($pid, $uid) {
   else {
     // DB.
     $q = <<<EOQ
-SELECT u.listid
-FROM {islandora_bookmark_list_users} as u INNER JOIN
-  {islandora_bookmark_list_pids} as p ON u.listid = p.listid INNER JOIN
-  {islandora_bookmark_list_names} as n ON u.listid = n.listid
+SELECT n.listid
+FROM {islandora_bookmark_list_pids} as p INNER JOIN
+  {islandora_bookmark_list_names} as n ON p.listid = n.listid LEFT JOIN
+  {islandora_bookmark_list_users} as u ON u.listid = p.listid
 WHERE p.pidid = :pid AND :uid IN (u.uid, n.listowner)
 EOQ;
     $list_result = db_query($q, array(':uid' => $uid, ':pid' => $pid))
