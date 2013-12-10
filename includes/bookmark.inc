@@ -216,7 +216,6 @@ abstract class Bookmark implements BookmarkInterface {
       // Pass off to BookmarkDatabase.
       $bookmark = BookmarkDatabase::getList($id, FALSE);
     }
-
     return $bookmark;
   }
 
@@ -569,7 +568,6 @@ abstract class Bookmark implements BookmarkInterface {
             '#title' => t('Style'),
             '#options' => $value,
             '#weight' => 0,
-            '#name' => 'islandora_bookmark_export_styles_' . $key,
             '#states' => array(
               'visible' => array(
                 ':input[name="bookmarks[fieldset][export_options]"]' => array('value' => $key),
@@ -837,7 +835,7 @@ abstract class Bookmark implements BookmarkInterface {
   /**
    * Submission callback; export the selected PIDs.
    */
-  protected function formExportSelected($form, $form_state) {
+  protected function formExportSelected(&$form, &$form_state) {
     $pids = $this->formGetSelected($form_state);
     $this->formExport($pids, $form_state);
   }
@@ -845,7 +843,7 @@ abstract class Bookmark implements BookmarkInterface {
   /**
    * Submission callback; export all PIDs in the list.
    */
-  protected function formExportAll($form, $form_state) {
+  protected function formExportAll(&$form, &$form_state) {
     $pids = $this->formGetAll($form_state);
     $this->formExport($pids, $form_state);
   }
@@ -856,30 +854,28 @@ abstract class Bookmark implements BookmarkInterface {
   protected function formExport($pids, $form_state) {
     $el = $form_state['complete form']['bookmarks']['fieldset']['export_options'];
     $key = drupal_array_get_nested_value($form_state['values'], $el['#parents']);
-
     $params = array(
       $pids,
     );
 
-    if (array_key_exists('islandora_bookmark_export_styles_' . $key, $form_state['input'])) {
-      $params[] = $form_state['input']['islandora_bookmark_export_styles_' . $key];
+    if (array_key_exists($key, $form_state['values']['bookmarks']['fieldset']['format_opts']['export_styles'])) {
+      $params[] = $form_state['values']['bookmarks']['fieldset']['format_opts']['export_styles'];
     }
-
     call_user_func_array($form_state['islandora_bookmark_export'][$key], $params);
   }
 
   /**
    * Submission callback; remove the selected PIDs from the list.
    */
-  protected function formRemoveSelectedFromList($form_state) {
-    $pids = $this->formGetAll($form_state);
+  protected function formRemoveSelectedFromList(&$form, &$form_state) {
+    $pids = $this->formGetSelected($form_state);
     $this->formRemoveFromList($pids, $form_state);
   }
 
   /**
    * Submission callback; remove all PIDs from the list.
    */
-  protected function formRemoveAllFromList($form_state) {
+  protected function formRemoveAllFromList(&$form, &$form_state) {
     $pids = $this->formGetAll($form_state);
     $this->formRemoveFromList($pids, $form_state);
   }

@@ -22,7 +22,7 @@ class BookmarkDatabase extends Bookmark {
   );
 
   /**
-   * Constructor for the Bookmark object.
+   * Constructor for the BookmarkDatabase object.
    */
   public function __construct($list_id) {
     parent::__construct($list_id, NULL, NULL);

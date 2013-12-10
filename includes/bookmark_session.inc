@@ -33,7 +33,7 @@ class BookmarkSession extends Bookmark {
   }
 
   /**
-   * Constructor for the Bookmark object.
+   * Constructor for the BookmarkSession object.
    */
   public function __construct($name) {
     global $user;
@@ -45,7 +45,7 @@ class BookmarkSession extends Bookmark {
   /**
    * Inherits.
    */
-  public static function getList($id) {
+  public static function getList($id, $force_session_attempt = FALSE) {
     if (isset($_SESSION['islandora_bookmark'][$id])) {
       return $_SESSION['islandora_bookmark'][$id];
     }
