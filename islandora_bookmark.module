@@ -222,9 +222,12 @@ function islandora_bookmark_theme() {
  * database.
  */
 function islandora_bookmark_user_login(&$edit, $account) {
-  $destination = $_GET['destination'];
-  if (strpos($destination, 'islandora-bookmark/listid') === 0) {
-    $potential_list = substr($destination, strrpos($destination, '/') + 1, strlen($destination));
+  if (isset($_GET['destination'])) {
+    $destination = $_GET['destination'];
+
+    if (strpos($destination, 'islandora-bookmark/listid') === 0) {
+      $potential_list = substr($destination, strrpos($destination, '/') + 1, strlen($destination));
+    }
   }
   if (!empty($_SESSION['islandora_bookmark'])) {
     foreach ($_SESSION['islandora_bookmark'] as $bookmark_session) {
