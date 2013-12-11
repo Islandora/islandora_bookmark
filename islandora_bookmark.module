@@ -93,34 +93,8 @@ function islandora_bookmark_menu() {
 function islandora_bookmark_access($list_id) {
   global $user;
 
-  preg_match('/session_/', $list_id, $match);
-
-  if ($match) {
-    $bookmark_access = TRUE;
-  }
-  else {
-    $bookmark_access = FALSE;
-
-    $owner_query = db_query('SELECT listowner FROM {islandora_bookmark_list_names} WHERE listid = :listid ORDER BY listid', array(':listid' => $list_id))->fetchObject();
-
-    if ($owner_query && $owner_query->listowner === $user->uid) {
-      $bookmark_access = TRUE;
-    }
-    else {
-      $user_query = db_query('SELECT uid FROM {islandora_bookmark_list_users} WHERE listid = :listid', array(':listid' => $list_id));
-      foreach ($user_query as $record) {
-        if ($record->uid == $user->uid) {
-          $bookmark_access = TRUE;
-          break;
-        }
-        elseif ($record->uid == 0) {
-          $bookmark_access = TRUE;
-          break;
-        }
-      }
-    }
-  }
-  return $bookmark_access;
+  $bookmark_object = Bookmark::getList($list_id);
+  return $bookmark_object && ($bookmark_object->bookmarkOwner === $user->uid || in_array($user->uid, $bookmark_object->getUsers()));
 }
 
 /**
@@ -248,6 +222,10 @@ function islandora_bookmark_theme() {
  * database.
  */
 function islandora_bookmark_user_login(&$edit, $account) {
+  $destination = $_GET['destination'];
+  if (strpos($destination, 'islandora-bookmark/listid') === 0) {
+    $potential_list = substr($destination, strrpos($destination, '/') + 1, strlen($destination));
+  }
   if (!empty($_SESSION['islandora_bookmark'])) {
     foreach ($_SESSION['islandora_bookmark'] as $bookmark_session) {
       // If the list is deletable we can proceed as normal as it's not a
@@ -270,6 +248,9 @@ function islandora_bookmark_user_login(&$edit, $account) {
         }
       }
       $persistent_bookmark->addPids($bookmark_session->getPids());
+      if (isset($potential_list) && $bookmark_session->getId() == $potential_list) {
+        $_GET['destination'] = "islandora-bookmark/listid/{$persistent_bookmark->getId()}";
+      }
     }
     unset($_SESSION['islandora_bookmark']);
   }
