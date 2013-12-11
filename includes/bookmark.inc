@@ -857,9 +857,8 @@ abstract class Bookmark implements BookmarkInterface {
     $params = array(
       $pids,
     );
-
     if (array_key_exists($key, $form_state['values']['bookmarks']['fieldset']['format_opts']['export_styles'])) {
-      $params[] = $form_state['values']['bookmarks']['fieldset']['format_opts']['export_styles'];
+      $params[] = $form_state['values']['bookmarks']['fieldset']['format_opts']['export_styles'][$key];
     }
     call_user_func_array($form_state['islandora_bookmark_export'][$key], $params);
   }
