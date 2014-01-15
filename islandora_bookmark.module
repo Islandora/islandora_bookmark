@@ -94,7 +94,9 @@ function islandora_bookmark_access($list_id) {
   global $user;
 
   $bookmark_object = Bookmark::getList($list_id);
-  return $bookmark_object && ($bookmark_object->bookmarkOwner === $user->uid || in_array($user->uid, $bookmark_object->getUsers()));
+  // We explicitly check anonymous (uid 0) as bookmarks shared with that user
+  // are determined to be accessible to everyone.
+  return $bookmark_object && ($bookmark_object->bookmarkOwner === $user->uid || in_array($user->uid, $bookmark_object->getUsers()) || in_array('0', $bookmark_object->getUsers()));
 }
 
 /**
@@ -248,6 +250,10 @@ function islandora_bookmark_user_login(&$edit, $account) {
           $default_list_name = variable_get('islandora_bookmark_default_list_name', "@username's Default List");
           $default_list_name = format_string($default_list_name, array('@username' => $account->name));
           $persistent_bookmark = BookmarkDefaultDatabaseList::createNewList($default_list_name, 'bookmark_default', $account);
+          if (variable_get('islandora_bookmark_share_default_list', FALSE)) {
+            // The anonymous user (uid 0) is considered to be "Everyone".
+            $persistent_bookmark->addUser('0');
+          }
         }
       }
       $persistent_bookmark->addPids($bookmark_session->getPids());
@@ -265,7 +271,11 @@ function islandora_bookmark_user_login(&$edit, $account) {
     if (!$default_list_exists) {
       $default_list_name = variable_get('islandora_bookmark_default_list_name', "@username's Default List");
       $default_list_name = format_string($default_list_name, array('@username' => $account->name));
-      BookmarkDefaultDatabaseList::createNewList($default_list_name, 'bookmark_default', $account);
+      $created_default_list = BookmarkDefaultDatabaseList::createNewList($default_list_name, 'bookmark_default', $account);
+      if (variable_get('islandora_bookmark_share_default_list', FALSE)) {
+        // The anonymous user (uid 0) is considered to be "Everyone".
+        $created_default_list->addUser('0');
+      }
     }
   }
 }

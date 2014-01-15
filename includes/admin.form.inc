@@ -55,6 +55,16 @@ function islandora_bookmark_admin_settings(array $form, array &$form_state) {
         ),
       ),
     ),
+    'share_with_everyone' => array(
+      '#type' => 'checkbox',
+      '#title' => t('Share new default lists with everyone?'),
+      '#default_value' => variable_get('islandora_bookmark_share_default_list', FALSE),
+      '#states' => array(
+        'visible' => array(
+          ':input[name="create_user_default_lists"]' => array('checked' => TRUE),
+        ),
+      ),
+    ),
     'submit' => array(
       '#type' => 'submit',
       '#value' => t('Save configuration'),
@@ -64,7 +74,6 @@ function islandora_bookmark_admin_settings(array $form, array &$form_state) {
       '#value' => t('Reset to defaults'),
     ),
   );
-
   return $form;
 }
 
@@ -103,6 +112,7 @@ function islandora_bookmark_admin_settings_submit(array $form, array &$form_stat
       variable_set('islandora_bookmark_create_user_default_lists', $form_state['values']['create_user_default_lists']);
       if ($form_state['values']['create_user_default_lists']) {
         variable_set('islandora_bookmark_default_list_name', $form_state['values']['default_list_name']);
+        variable_set('islandora_bookmark_share_default_list', $form_state['values']['share_with_everyone']);
       }
       break;
 
@@ -112,6 +122,7 @@ function islandora_bookmark_admin_settings_submit(array $form, array &$form_stat
       variable_del('islandora_bookmark_type');
       variable_del('islandora_bookmark_create_user_default_lists');
       variable_del('islandora_bookmark_default_list_name');
+      variable_del('islandora_bookmark_share_default_list');
       break;
   }
 }
