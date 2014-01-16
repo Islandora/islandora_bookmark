@@ -174,8 +174,11 @@ function islandora_bookmark_list_users_query($value) {
  *   The ID of the list if they do have one, FALSE otherwise.
  */
 function islandora_bookmark_get_default_list($user = NULL) {
-  if (!$user) {
+  if ($user === NULL) {
     global $user;
+  }
+  elseif (!is_object($user) || !isset($user->uid)) {
+    return FALSE;
   }
   $result = db_query('SELECT listid FROM {islandora_bookmark_list_names} WHERE listowner = :owner AND type = :type',
     array(
