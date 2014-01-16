@@ -1106,9 +1106,7 @@ function islandora_bookmark_list_title($list_id) {
   module_load_include('inc', 'islandora_bookmark', 'includes/api');
 
   $bookmark = islandora_bookmark_get_bookmark_by_number($list_id);
-  check_plain($bookmark->bookmarkName);
-
-  return check_plain($bookmark->bookmarkName);
+  return filter_xss($bookmark->bookmarkName);
 }
 
 /**
