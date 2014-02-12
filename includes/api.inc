@@ -111,10 +111,12 @@ function islandora_bookmark_get_bookmarks_visible_to_user($pid, $uid) {
     if (!isset($_SESSION) || empty($_SESSION['islandora_bookmark']) && variable_get('islandora_bookmark_create_user_default_lists', FALSE)) {
       BookmarkDefaultSessionList::createNewList(t('My Default List'), 'bookmark_default', NULL);
     }
-    foreach ($_SESSION['islandora_bookmark'] as $value) {
-      $templist = $value;
-      if (in_array($pid, $templist->getPids())) {
-        $lists[$templist->getId()] = $templist->getId();
+    if (isset($_SESSION['islandora_bookmark'])) {
+      foreach ($_SESSION['islandora_bookmark'] as $value) {
+        $templist = $value;
+        if (in_array($pid, $templist->getPids())) {
+          $lists[$templist->getId()] = $templist->getId();
+        }
       }
     }
   }
