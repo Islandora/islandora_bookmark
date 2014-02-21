@@ -129,3 +129,17 @@ function hook_islandora_bookmark_database_types() {
     'my_type' => 'my_awesome_bookmark_class',
   );
 }
+
+/**
+ * Allows modules to modify values on creation of database lists.
+ *
+ * @param string $name
+ *   The name for the list.
+ * @param string $type
+ *   A string indicating the type of list. Default is 'bookmark'.
+ * @param object $owner
+ *   A user object from which we can grab the uid.
+ */
+function hook_islandora_bookmark_create_new_database_list_alter(&$name, &$type, &$owner) {
+
+}
