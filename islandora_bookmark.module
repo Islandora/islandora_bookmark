@@ -5,6 +5,8 @@
  * Module used to track and manage user defined lists of pids.
  */
 
+define('ISLANDORA_BOOKMARK_DATABASE_LIST_CREATION_HOOK', 'islandora_bookmark_database_list_creation');
+
 /**
  * Implements hook_menu().
  */
