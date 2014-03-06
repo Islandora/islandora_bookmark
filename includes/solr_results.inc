@@ -75,8 +75,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
     $header = $this->getTableHeader();
     $rows = array();
     foreach ($object_results as $object_result) {
-      $doc = $object_result['solr_doc'];
-      $rows[$doc['PID']] = $this->getTableRow($object_result);
+      $rows[$object_result['PID']] = $this->getTableRow($object_result);
     }
 
     if (count($rows) > 0) {
@@ -123,7 +122,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
       $markup = $doc['object_label'];
     }
     else {
-      $markup = $doc['PID'];
+      $markup = $object_result['PID'];
     }
 
     $object_url_info = array(
@@ -133,7 +132,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
     );
 
     return array(
-      'markup' => islandora_bookmark_generate_markup($doc['PID'], $object_url_info),
+      'markup' => islandora_bookmark_generate_markup($object_result['PID'], $object_url_info),
     );
   }
 
@@ -517,8 +516,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
 
     // Helper anonymous function... Just get the PID.
     $get_pid = function($result) {
-      $doc = $result['solr_doc'];
-      return $doc['PID'];
+      return $result['PID'];
     };
 
     $qp = $this->islandoraSolrQueryProcessor;
