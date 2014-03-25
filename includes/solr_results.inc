@@ -53,10 +53,8 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
    *   An array containing form structure.
    */
   public function formGet($form, &$form_state, $object_results) {
-    $form_state['islandora_solr_query_processor'] = $this->islandoraSolrQueryProcessor;
     module_load_include('inc', 'islandora_bookmark', 'includes/api');
-
-    form_load_include($form_state, 'inc', 'islandora_bookmark', 'IslandoraSolrResultsBookmark');
+    $form_state['islandora_solr_query_processor'] = $this->islandoraSolrQueryProcessor;
 
     if (module_exists('citation_exporter')) {
       if (CitationExporter::ReadyToExport()) {
@@ -116,10 +114,10 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
    */
   protected function getTableRow($object_result) {
     $doc = $object_result['solr_doc'];
-
+    $solr_field = variable_get('islandora_solr_object_label_field', 'fgs_label_s');
     $markup = '';
-    if (isset($doc['object_label'])) {
-      $markup = $doc['object_label'];
+    if (isset($doc[$solr_field])) {
+      $markup = $doc[$solr_field];
     }
     else {
       $markup = $object_result['PID'];
