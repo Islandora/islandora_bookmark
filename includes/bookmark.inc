@@ -852,7 +852,6 @@ abstract class Bookmark implements BookmarkInterface {
    * Submission helper; export the given PIDs.
    */
   protected function formExport($pids, $form_state) {
-  	dsm($pids, "export pids");
     $el = $form_state['complete form']['bookmarks']['fieldset']['export_options'];
     $key = drupal_array_get_nested_value($form_state['values'], $el['#parents']);
     $params = array(
@@ -861,8 +860,6 @@ abstract class Bookmark implements BookmarkInterface {
     if (array_key_exists($key, $form_state['values']['bookmarks']['fieldset']['format_opts']['export_styles'])) {
       $params[] = $form_state['values']['bookmarks']['fieldset']['format_opts']['export_styles'][$key];
     }
-    dsm($form_state['islandora_bookmark_export'][$key], "key");
-    dsm($params, "params");
     call_user_func_array($form_state['islandora_bookmark_export'][$key], $params);
   }
 
