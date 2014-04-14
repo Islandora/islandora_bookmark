@@ -68,7 +68,7 @@ function islandora_bookmark_menu() {
     'access arguments' => array(2),
     'type' => MENU_CALLBACK,
   );
-  $items['admin/islandora/islandora-bookmark'] = array(
+  $items['admin/islandora/tools/islandora-bookmark'] = array(
     'title' => 'Bookmark',
     'description' => 'Configure settings for the Bookmark module.',
     'page callback' => 'drupal_get_form',
