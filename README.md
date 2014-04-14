@@ -30,7 +30,7 @@ REQUIREMENTS
 CONFIGURATION
 -------------
 
- * General settings can be configured on the admin page at admin/islandora/islandora_bookmark.
+ * General settings can be configured on the admin page at admin/islandora/tools/islandora_bookmark.
  * In the solr client admin page (admin/islandora/search/islandora_solr), enable the Islandora Bookmark
    display profile.
  * Set the permissions: there are permissions to administer, use and share bookmarks. Anonymous users can never
