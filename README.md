@@ -24,10 +24,9 @@ Install as usual, see [this](https://drupal.org/documentation/install/modules-th
 
 ## Configuration
 
-Configure general bookmark settings in Administration » Islandora » Bookmark (admin/islandora/islandora_bookmark).
+Configure general bookmark settings in Administration » Islandora » Islandora Utility Modules » Bookmark (admin/islandora/tools/islandora-bookmark).
 
-![Configuration](http://i.imgur.com/xFqF471.png)
-
+![Configuration](https://camo.githubusercontent.com/e851eaa47d5ba712ff7e8579a91dd6da2b38ae64/687474703a2f2f692e696d6775722e636f6d2f7664747444534d2e706e67)
 
 Enable 'Bookmark' in Administration » Islandora » Solr index » Solr Settings (admin/islandora/search/islandora_solr/settings).
 
