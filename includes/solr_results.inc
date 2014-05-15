@@ -518,6 +518,9 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
     };
 
     $qp = $this->islandoraSolrQueryProcessor;
+    $old_params = $qp->solrParams;
+    $qp->solrParams['fl'] = 'PID';
+    $qp->solrStart = 0;
     $qp->solrLimit = 10000;
 
     // Handle the first set separately, so we can get the total number for our
@@ -529,6 +532,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
     $pids = array_map($get_pid, $object_results);
 
     for ($i = $qp->solrLimit; $i < $result_count; $i += $qp->solrLimit) {
+      $qp->solrStart = $i;
       $qp->executeQuery();
       $solr_results = $qp->islandoraSolrResult;
       $object_results = $solr_results['response']['objects'];
@@ -538,6 +542,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
         array_map($get_pid, $object_results)
       );
     }
+    $qp->solrParams = $old_params;
 
     return $pids;
   }
