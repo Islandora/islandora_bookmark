@@ -18,7 +18,7 @@
         <?php foreach($objects[$column] as $pid => $object_markup): ?>
           <div>
             <?php foreach($object_markup as $markup): ?>
-              <?php print($markup); ?>
+              <?php print $markup; ?>
             <?php endforeach; ?>
           </div>
         <?php endforeach; ?>
