@@ -28,14 +28,14 @@ function islandora_bookmark_preprocess_islandora_bookmark_list_columns(array &$v
     // Build markup for objects.
     $object_markup = &$variables['objects'][$column][$pid];
     $object = islandora_object_load($pid);
-    $object_markup[] = islandora_datastream_access(ISLANDORA_VIEW_OBJECTS, $object['TN']) ?
+    $object_markup['image'] = islandora_datastream_access(ISLANDORA_VIEW_OBJECTS, $object['TN']) ?
       theme(
         'image',
         array('path' => url("islandora/object/$pid/datastream/TN/view"))) :
       '';
 
     $display_label = isset($object->label) ? $object->label : $pid;
-    $object_markup[] = l(
+    $object_markup['label'] = l(
       t("<strong>@display_label</strong>", array('@display_label' => $display_label)),
       "islandora/object/$pid",
       array('html' => TRUE)
@@ -47,7 +47,7 @@ function islandora_bookmark_preprocess_islandora_bookmark_list_columns(array &$v
       $dc_xpath = new DOMXpath($dc_dom);
       $dc_elements = $dc_xpath->query("//*[local-name()='description']");
       if ($dc_elements->item(0)) {
-        $object_markup[] = "<div>{$dc_elements->item(0)->nodeValue}</div>";
+        $object_markup['description'] = "<div>{$dc_elements->item(0)->nodeValue}</div>";
       }
     }
   }
