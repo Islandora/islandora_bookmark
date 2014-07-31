@@ -30,8 +30,27 @@ function islandora_bookmark_menu() {
   $items['islandora-bookmark/listid/%'] = array(
     'title callback' => 'islandora_bookmark_list_title',
     'title arguments' => array(2),
+    'page callback' => 'islandora_bookmark_display_list',
+    'page arguments' => array(2),
+    'access callback' => 'islandora_bookmark_access',
+    'access arguments' => array(2),
+  );
+  $items['islandora-bookmark/listid/%/manage'] = array(
+    'title callback' => 'islandora_bookmark_list_title',
+    'title arguments' => array(2),
     'page callback' => 'islandora_bookmark_detailed_forms',
     'page arguments' => array(2),
+    'access callback' => 'islandora_bookmark_access',
+    'access arguments' => array(2),
+  );
+  $items['islandora-bookmark/listid/%/view'] = array(
+    'title callback' => 'islandora_bookmark_list_title',
+    'title arguments' => array(2),
+    'page callback' => 'theme',
+    'page arguments' => array(
+      'islandora_bookmark_list_columns',
+      array('id' => 2),
+    ),
     'access callback' => 'islandora_bookmark_access',
     'access arguments' => array(2),
   );
@@ -214,6 +233,15 @@ function islandora_bookmark_theme() {
     'islandora_bookmark_object_display' => array(
       'template' => 'theme/islandora-bookmark-object-display',
       'variables' => array('object_url_info' => NULL),
+    ),
+    'islandora_bookmark_list_columns' => array(
+      'template' => 'theme/list-columns',
+      'variables' => array('id' => NULL),
+      'file' => 'theme/theme.inc',
+    ),
+    'islandora_bookmark_list_links' => array(
+      'variables' => array('id' => NULL, 'current' => NULL),
+      'file' => 'theme/theme.inc',
     ),
   );
 }
@@ -497,17 +525,28 @@ function islandora_bookmark_object_display($object_url_info) {
  *
  * @param string $list_id
  *   ID of the bookmark list to be rendered.
- *
- * @return string
- *   Rendered forms to display and manage the bookmark list.
  */
 function islandora_bookmark_detailed_forms($list_id) {
-  $output = '';
-  $detailed_form = drupal_get_form('islandora_bookmark_detailed_form', $list_id);
-  $output .= drupal_render($detailed_form);
-  $detailed_form_manage = drupal_get_form('islandora_bookmark_detailed_form_manage', $list_id);
-  $output .= drupal_render($detailed_form_manage);
-  return $output;
+  return array(
+    'detailed_form' => drupal_get_form('islandora_bookmark_detailed_form', $list_id),
+    'manage' => drupal_get_form('islandora_bookmark_detailed_form_manage', $list_id),
+  );
+}
+
+/**
+ * Menu callback for backwards compatibility and configuration of list display.
+ *
+ * @param string $list_id
+ *   ID of the bookmark list to be rendered.
+ */
+function islandora_bookmark_display_list($list_id) {
+  $display = variable_get('islandora_bookmark_default_list_view', '');
+  if ($display == '') {
+    return islandora_bookmark_detailed_forms($list_id);
+  }
+  else {
+    return theme($display, array('id' => $list_id));
+  }
 }
 
 /**
