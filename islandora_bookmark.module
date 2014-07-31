@@ -540,8 +540,8 @@ function islandora_bookmark_detailed_forms($list_id) {
  *   ID of the bookmark list to be rendered.
  */
 function islandora_bookmark_display_list($list_id) {
-  $display = variable_get('islandora_bookmark_default_list_view', '');
-  if ($display == '') {
+  $display = variable_get('islandora_bookmark_default_list_view', 'manage');
+  if ($display == 'manage') {
     return islandora_bookmark_detailed_forms($list_id);
   }
   else {

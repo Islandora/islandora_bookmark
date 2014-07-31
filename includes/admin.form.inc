@@ -68,9 +68,9 @@ function islandora_bookmark_admin_settings(array $form, array &$form_state) {
     'islandora_bookmark_default_list_view' => array(
       '#type' => 'select',
       '#title' => t('Default bookmark list view.'),
-      '#default_value' => variable_get('islandora_bookmark_default_list_view', ''),
+      '#default_value' => variable_get('islandora_bookmark_default_list_view', 'manage'),
       '#options' => array(
-        '' => t('Administration Table'),
+        'manage' => t('Administration Table'),
         'islandora_bookmark_list_columns' => t('Columns'),
       ),
     ),
