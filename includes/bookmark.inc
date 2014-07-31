@@ -462,20 +462,11 @@ abstract class Bookmark implements BookmarkInterface {
       ),
     );
 
-    // This is the RSS icon link.
-    if ($this->getIsPersistent() && $this->getPidCount() > 0) {
-      $id = $this->getId();
-      $form['bookmark_rss'] = array(
-        '#weight' => -1,
-        '#markup' => l(theme('image', array(
-          'path' => drupal_get_path('module', 'islandora_bookmark') . '/images/rss.png',
-          'title' => t('Present Bookmark list in RSS form'),
-          'attributes' => array(),
-            )), "islandora-bookmark/listid/$id/rss", array('html' => TRUE)),
-        '#prefix' => '<div id="islandora-bookmark-rss-format">',
-        '#suffix' => '</div>',
-      );
-    }
+    // This is the list links.
+    $form['bookmark_list_links'] = theme(
+      'islandora_bookmark_list_links',
+      array('id' => $this->bookmarkId, 'current' => 'manage')
+    );
 
     // Do pager calcuations to limit the number of objects displayed per page.
     $num_eles = variable_get('islandora_bookmark_detailed_page_elements', 10);

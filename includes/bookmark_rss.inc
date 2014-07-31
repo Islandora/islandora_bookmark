@@ -93,9 +93,9 @@ function islandora_bookmark_create_rss_item(AbstractObject $object) {
  * Function for setting the values of the <item> elements for the default RSS.
  *
  * @tutorial http://feed2.w3.org/docs/rss2.html#hrelementsOfLtitemgt
- * 
+ *
  * @tutorial http://feed2.w3.org/docs/rss2.html#requiredChannelElements
- * 
+ *
  * @param AbstractObject $object
  *   An abstract object
  *

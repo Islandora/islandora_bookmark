@@ -63,7 +63,7 @@ function hook_islandora_bookmark_object_markup(AbstractObject $fedora_object, $o
  * @return array
  *   Returns an array containing the markup for displaying the Fedora object.
  */
-function hook_CMODEL_PID_islandora_bookmark_object_markup(AbstractObject $fedora_object, $object_url_info) {
+function hook_cmodel_pid_islandora_bookmark_object_markup(AbstractObject $fedora_object, $object_url_info) {
 }
 
 /**
