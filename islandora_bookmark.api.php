@@ -49,6 +49,9 @@ function hook_islandora_bookmark_object_markup(AbstractObject $fedora_object, $o
 /**
  * Hook to alter existing markup for displaying a Fedora object within a table.
  *
+ * @param AbstractObject $fedora_object
+ *   An AbstractObject representing a Fedora object.
+ *
  * @param array $object_url_info
  *   An associative array contains information to build an anchor tag.
  *   - path: A string containing the path/
