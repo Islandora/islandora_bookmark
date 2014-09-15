@@ -479,7 +479,7 @@ function islandora_bookmark_generate_markup($pid, $object_url_info = NULL) {
         $output = array_merge_recursive($output, $temp);
       }
     }
-
+    drupal_alter('islandora_bookmark_object_markup', $fedora_object, $output);
     // Add in the default, if we did not get any results.
     if (empty($output)) {
       $output = islandora_bookmark_object_display($object_url_info);
