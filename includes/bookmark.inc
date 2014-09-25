@@ -125,46 +125,6 @@ abstract class Bookmark implements BookmarkInterface {
   }
 
   /**
-   * Somewhat more graceful deprecation of old properties.
-   */
-  public function __get($property) {
-    if ($property == 'userList') {
-      module_load_include('inc', 'islandora', 'includes/utilities');
-      $message = islandora_deprecated('7.x-1.3', 'Use the methods {get,add,remove}Users(), instead of accessing as a property.');
-      trigger_error(filter_xss($message), E_USER_DEPRECATED);
-      return $this->getUsers();
-    }
-    elseif ($property == 'pidList') {
-      module_load_include('inc', 'islandora', 'includes/utilities');
-      $message = islandora_deprecated('7.x-1.3', 'Use the methods {get,add,remove}Pids(), instead of accessing as a property.');
-      trigger_error(filter_xss($message), E_USER_DEPRECATED);
-      return $this->getPids();
-    }
-  }
-
-  /**
-   * Somewhat more graceful deprecation of old properties.
-   */
-  public function __set($property, $value) {
-    if ($property == 'userList') {
-      module_load_include('inc', 'islandora', 'includes/utilities');
-      $message = islandora_deprecated('7.x-1.3', 'Use the methods {get,add,remove}Users(), instead of accessing as a property.');
-      trigger_error(filter_xss($message), E_USER_DEPRECATED);
-      $this->removeUsers($this->getUsers());
-      $this->addUsers($value);
-      return $value;
-    }
-    elseif ($property == 'pidList') {
-      module_load_include('inc', 'islandora', 'includes/utilities');
-      $message = islandora_deprecated('7.x-1.3', 'Use the methods {get,add,remove}Pids(), instead of accessing as a property.');
-      trigger_error(filter_xss($message), E_USER_DEPRECATED);
-      $this->removeAllPids();
-      $this->addPids($value);
-      return $value;
-    }
-  }
-
-  /**
    * Accessor for the list ID.
    *
    * @return mixed
