@@ -15,9 +15,9 @@
 <div>
   <h1><?php print $name; ?></h1>
   <hr/>
-  <h3>By: <?php print $user; ?></h3>
-  <h3>Description: </h3>
-  <?php print $description; ?>
+  <h3><?php print t("By"); ?> : <?php print $user; ?></h3>
+  <h3><?php print t("Description"); ?> : </h3>
+  <p><?php print $description; ?></p>
   <hr/>
   <label for="list_url"><?php print t('URL'); ?></label>
   <input id="list_url_link" name="list_url" value="<?php print $link; ?>"></input>
