@@ -213,7 +213,7 @@ function islandora_bookmark_block_view($delta = '') {
         $user = db_query(
           'SELECT name FROM {users} WHERE uid = :uid',
           array(
-            ':uid' => $bookmark->bookmarkOwner
+            ':uid' => $bookmark->bookmarkOwner,
           )
         )->fetchObject();
         $block['content'] = theme(
