@@ -166,6 +166,10 @@ function islandora_bookmark_block_info() {
     'info' => t('Islandora Bookmark'),
     'cache' => DRUPAL_NO_CACHE,
   );
+  $blocks['islandora_bookmark_list_info'] = array(
+    'info' => t('Islandora Bookmark List Info'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
   return $blocks;
 }
 
@@ -197,6 +201,33 @@ function islandora_bookmark_block_view($delta = '') {
         $block['pid'] = $pid;
       }
       break;
+
+    case 'islandora_bookmark_list_info':
+      // Block intended for use on the list view page.
+      // EX: 'islandora-bookmark/listid/1'.
+      if (arg(0) == 'islandora-bookmark') {
+        global $base_url;
+        $uri = $base_url . request_uri();
+        $list_id = arg(2);
+        $bookmark = Bookmark::getList($list_id);
+        $user = db_query(
+          'SELECT name FROM {users} WHERE uid = :uid',
+          array(
+            ':uid' => $bookmark->bookmarkOwner
+          )
+        )->fetchObject();
+        $block['content'] = theme(
+          'islandora_bookmark_list_info',
+          array(
+            'name' => $bookmark->bookmarkName,
+            'user' => $user->name,
+            'description' => $bookmark->bookmarkDescription,
+            'link' => $uri,
+          )
+        );
+      }
+      break;
+
   }
   return $block;
 }
@@ -242,6 +273,15 @@ function islandora_bookmark_theme() {
     'islandora_bookmark_list_links' => array(
       'variables' => array('id' => NULL, 'current' => NULL),
       'file' => 'theme/theme.inc',
+    ),
+    'islandora_bookmark_list_info' => array(
+      'variables' => array(
+        'name' => "",
+        'user' => "",
+        'description' => "",
+        'link' => "",
+      ),
+      'template' => 'theme/islandora-bookmark-list-info',
     ),
   );
 }
@@ -921,7 +961,6 @@ function islandora_bookmark_overview_form(array $form, array &$form_state) {
   $offset_shared = $shared_page * $num_eles;
   $shared_bookmarks = islandora_bookmark_get_user_shared_bookmarks();
   $paged_shared_bookmarks = array_slice($shared_bookmarks, $offset_shared, $num_eles);
-
   pager_default_initialize(count($shared_bookmarks), $num_eles, $element = 1);
   $form['shared_bookmarks'] = array(
     'fieldset' => array(
@@ -954,6 +993,7 @@ function islandora_bookmark_form_overview_table(array $bookmark_objs) {
   $headers = array(
     'bookmark_name' => t('List name'),
     'bookmark_owner' => t('Owner'),
+    'bookmark_desc' => t('Description'),
   );
   $rows = array();
   foreach ($bookmark_objs as $bookmark) {
@@ -969,6 +1009,7 @@ function islandora_bookmark_form_overview_table(array $bookmark_objs) {
     $rows[$id] = array(
       'bookmark_name' => l($bookmark->bookmarkName, "islandora-bookmark/listid/$id"),
       'bookmark_owner' => $owner_output,
+      'bookmark_desc' => $bookmark->bookmarkDescription,
     );
   }
 
@@ -1005,6 +1046,14 @@ function islandora_bookmark_add_form(array $form, array &$form_state) {
     '#size' => 30,
   );
 
+  $form['listdesc'] = array(
+    '#title' => t('List description'),
+    '#required' => FALSE,
+    '#description' => t('Descriptive text for the @type list.', array('@type' => variable_get('islandora_bookmark_type', 'bookmark'))),
+    '#type' => 'textfield',
+    '#size' => 30,
+  );
+
   $form['submit'] = array(
     '#type' => 'submit',
     '#name' => 'islandora_bookmark_add_form_submit',
@@ -1028,8 +1077,8 @@ function islandora_bookmark_add_form_submit(array $form, array &$form_state) {
   global $user;
 
   $bookmark_name = $form_state['values']['listname'];
-
-  $temp_list = Bookmark::createNewList($bookmark_name);
+  $bookmark_description = $form_state['values']['listdesc'];
+  $temp_list = Bookmark::createNewList($bookmark_name, $bookmark_description);
   $saved_list = NULL;
   if ($user->uid == 0) {
     $saved_list = 'Log into an account to save ' . variable_get('islandora_bookmark_type', 'bookmark') . ' lists; lists created anonymously will not be saved.';

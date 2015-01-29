@@ -87,6 +87,13 @@ abstract class Bookmark implements BookmarkInterface {
   public $bookmarkName;
 
   /**
+   * The description of the object.
+   *
+   * @var string
+   */
+  public $bookmarkDescription;
+
+  /**
    * The owner of the object.
    *
    * @var int
@@ -117,10 +124,11 @@ abstract class Bookmark implements BookmarkInterface {
   /**
    * Constructor for the Bookmark object.
    */
-  public function __construct($id, $name, $owner) {
+  public function __construct($id, $name, $owner, $desc = "") {
     $this->bookmarkId = $id;
     $this->bookmarkName = $name;
     $this->bookmarkOwner = $owner;
+    $this->bookmarkDescription = $desc;
     $this->isDeletable = TRUE;
   }
 
@@ -274,14 +282,14 @@ abstract class Bookmark implements BookmarkInterface {
    * @return BookmarkSession|BookmarkDatabase
    *   The BookmarkSession or BookmarkDatabase object that is created.
    */
-  public static function createNewList($name) {
+  public static function createNewList($name, $desc = "") {
     global $user;
 
     if ($user->uid === 0) {
-      return BookmarkSession::createNewList($name);
+      return BookmarkSession::createNewList($name, 'bookmark', NULL, $desc);
     }
     else {
-      return BookmarkDatabase::createNewList($name);
+      return BookmarkDatabase::createNewList($name, 'bookmark', NULL, $desc);
     }
   }
 
