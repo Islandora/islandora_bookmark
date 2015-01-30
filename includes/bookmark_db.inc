@@ -166,7 +166,7 @@ class BookmarkDatabase extends Bookmark {
    *   A user object from which we can grab the uid. If not provided, we'll
    *   grab the global "$user" variable.
    * @param string $desc
-   *   The descriptive text of the bookmark list.
+   *   An optional description of the bookmark list.
    *
    * @return BookmarkDatabase
    *   A new Bookmark object.

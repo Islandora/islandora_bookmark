@@ -206,25 +206,21 @@ function islandora_bookmark_block_view($delta = '') {
       // Block intended for use on the list view page.
       // EX: 'islandora-bookmark/listid/1'.
       if (arg(0) == 'islandora-bookmark') {
-        global $base_url;
-        $uri = $base_url . request_uri();
+        $uri = url(current_path(), array('absolute' => TRUE));
         $list_id = arg(2);
-        $bookmark = Bookmark::getList($list_id);
-        $user = db_query(
-          'SELECT name FROM {users} WHERE uid = :uid',
-          array(
-            ':uid' => $bookmark->bookmarkOwner,
-          )
-        )->fetchObject();
-        $block['content'] = theme(
-          'islandora_bookmark_list_info',
-          array(
-            'name' => $bookmark->bookmarkName,
-            'user' => $user->name,
-            'description' => $bookmark->bookmarkDescription,
-            'link' => $uri,
-          )
-        );
+        if ($list_id) {
+          $bookmark = Bookmark::getList($list_id);
+          $user = user_load($bookmark->bookmarkOwner);
+          $block['content'] = theme(
+            'islandora_bookmark_list_info',
+            array(
+              'name' => $bookmark->bookmarkName,
+              'user' => $user->name,
+              'description' => $bookmark->bookmarkDescription,
+              'link' => $uri,
+            )
+          );
+        }
       }
       break;
 
@@ -266,7 +262,7 @@ function islandora_bookmark_theme() {
       'variables' => array('object_url_info' => NULL),
     ),
     'islandora_bookmark_list_columns' => array(
-      'template' => 'theme/list-columns',
+      'template' => 'theme/islandora-bookmark-list-columns',
       'variables' => array('id' => NULL),
       'file' => 'theme/theme.inc',
     ),
@@ -475,8 +471,9 @@ function islandora_bookmark_update_bookmark(array $form, array &$form_state) {
 
   $bookmark_object = $form_state['bookmark_object'];
   $newlist_name = $form_state['input']['bookmarks']['management']['listname'];
-
+  $newlist_description = $form_state['input']['bookmarks']['management']['description'];
   $bookmark_object->changeListName(trim($newlist_name));
+  $bookmark_object->changeDescription(trim($newlist_description));
   drupal_set_message(t('List settings updated.'));
 }
 
@@ -681,7 +678,11 @@ function islandora_bookmark_detailed_form_manage(array $form, array &$form_state
       '#size' => 30,
       '#default_value' => $bookmark->bookmarkName,
     );
-
+    $form['bookmarks']['management']['description'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Description'),
+      '#default_value' => $bookmark->bookmarkDescription,
+    );
     $form['bookmarks']['management']['update'] = array(
       '#type' => 'submit',
       '#value' => t('Save'),

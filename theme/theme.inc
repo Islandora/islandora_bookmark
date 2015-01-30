@@ -8,7 +8,7 @@
 /**
  * Implements hook_preprocess_theme().
  */
-function islandora_bookmark_preprocess_islandora_bookmark_list_columns(array &$variables) {
+function template_preprocess_islandora_bookmark_list_columns(array &$variables) {
   $variables['column_count'] = 3;
   $list_links = theme(
     'islandora_bookmark_list_links',
