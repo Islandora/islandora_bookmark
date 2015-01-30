@@ -35,11 +35,12 @@ class BookmarkSession extends Bookmark {
   /**
    * Constructor for the BookmarkSession object.
    */
-  public function __construct($name) {
+  public function __construct($name, $desc = '') {
     global $user;
     parent::__construct(static::getKey($name), $name, $user->uid);
     $this->pidList = array();
     $this->isPersistent = FALSE;
+    $this->bookmarkDescription = $desc;
   }
 
   /**
@@ -72,11 +73,13 @@ class BookmarkSession extends Bookmark {
    * @param object $owner
    *   A user object from which we can grab the uid. If not provided, we'll
    *   grab the global "$user" variable.
+   * @param string $desc
+   *   An optional description of the bookmark list.
    *
    * @return BookmarkDatabase
    *   A new Bookmark object.
    */
-  public static function createNewList($name, $owner = NULL) {
+  public static function createNewList($name, $owner = NULL, $desc = '') {
     if ($owner === NULL) {
       global $user;
       $owner = $user;
@@ -84,7 +87,7 @@ class BookmarkSession extends Bookmark {
 
     $list_id = static::getKey($name);
 
-    $_SESSION['islandora_bookmark'][$list_id] = new static($name);
+    $_SESSION['islandora_bookmark'][$list_id] = new static($name, $desc);
 
     return static::getList($list_id);
   }

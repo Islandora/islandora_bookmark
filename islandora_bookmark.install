@@ -64,7 +64,7 @@ function islandora_bookmark_schema() {
         'description' => 'The supplied description of the list',
         'type' => 'varchar',
         'length' => 255,
-        'default' => "Bookmark List",
+        'default' => '',
       ),
       'listowner' => array(
         'description' => 'The user ID of who owns the list.',
@@ -104,7 +104,7 @@ function islandora_bookmark_update_7101(&$sandbox) {
     'description' => 'The supplied description of the list',
     'type' => 'varchar',
     'length' => 255,
-    'default' => "Bookmark List",
+    'default' => '',
   ));
 }
 

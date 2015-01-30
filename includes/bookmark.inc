@@ -278,6 +278,8 @@ abstract class Bookmark implements BookmarkInterface {
    *
    * @param string $name
    *   A name for the newly created list.
+   * @param string $desc
+   *   An optional description for the list.
    *
    * @return BookmarkSession|BookmarkDatabase
    *   The BookmarkSession or BookmarkDatabase object that is created.
@@ -286,7 +288,7 @@ abstract class Bookmark implements BookmarkInterface {
     global $user;
 
     if ($user->uid === 0) {
-      return BookmarkSession::createNewList($name, 'bookmark', NULL, $desc);
+      return BookmarkSession::createNewList($name, NULL, $desc);
     }
     else {
       return BookmarkDatabase::createNewList($name, 'bookmark', NULL, $desc);
@@ -310,6 +312,16 @@ abstract class Bookmark implements BookmarkInterface {
    */
   public function changeListName($name) {
     $this->bookmarkName = $name;
+  }
+
+  /**
+   * Changes the description of the object in the session or the database.
+   *
+   * @param string $description
+   *   The new description of the object.
+   */
+  public function changeDescription($description) {
+    $this->bookmarkDescription = $description;
   }
 
   /**
