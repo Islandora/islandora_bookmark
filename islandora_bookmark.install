@@ -60,6 +60,12 @@ function islandora_bookmark_schema() {
         'length' => 255,
         'not null' => TRUE,
       ),
+      'descrip' => array(
+        'description' => 'The supplied description of the list',
+        'type' => 'varchar',
+        'length' => 255,
+        'default' => '',
+      ),
       'listowner' => array(
         'description' => 'The user ID of who owns the list.',
         'type' => 'int',
@@ -87,6 +93,18 @@ function islandora_bookmark_update_7100(&$sandbox) {
     'type' => 'varchar',
     'length' => 255,
     'default' => 'bookmark',
+  ));
+}
+
+/**
+ * Adds a description field to bookmarks.
+ */
+function islandora_bookmark_update_7101(&$sandbox) {
+  db_add_field('islandora_bookmark_list_names', 'descrip', array(
+    'description' => 'The supplied description of the list',
+    'type' => 'varchar',
+    'length' => 255,
+    'default' => '',
   ));
 }
 

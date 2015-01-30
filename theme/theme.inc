@@ -8,7 +8,7 @@
 /**
  * Implements hook_preprocess_theme().
  */
-function islandora_bookmark_preprocess_islandora_bookmark_list_columns(array &$variables) {
+function template_preprocess_islandora_bookmark_list_columns(array &$variables) {
   $variables['column_count'] = 3;
   $list_links = theme(
     'islandora_bookmark_list_links',
@@ -89,4 +89,26 @@ function theme_islandora_bookmark_list_links(array &$variables) {
   );
   drupal_add_css($module_path . '/css/list-links.css');
   return $links;
+}
+
+/**
+ * Prepares variables for islandora_bookmark_list_info templates.
+ *
+ * Default template: islandora-bookmark-list-info.tpl.php.
+ *
+ * @param array $variables
+ *   An associative array containing:
+ *   - bookmark: A Bookmark object for which to render info.
+ *   We populate:
+ *   - user: The owner's name.
+ *   - name: The name of the list.
+ *   - description: The "description" value associated with the list.
+ *   - link: An absolute URL to the current path.
+ */
+function template_preprocess_islandora_bookmark_list_info(array &$variables) {
+  $variables['name'] = $variables['bookmark']->bookmarkName;
+  $owner = user_load($variables['bookmark']->bookmarkOwner);
+  $variables['user'] = $owner->name;
+  $variables['description'] = $variables['bookmark']->bookmarkDescription;
+  $variables['link'] = url(current_path(), array('absolute' => TRUE));
 }

@@ -19,6 +19,7 @@ class BookmarkDatabase extends Bookmark {
     'bookmarkName' => 'listname',
     'bookmarkOwner' => 'listowner',
     'type' => 'type',
+    'bookmarkDescription' => 'descrip',
   );
 
   /**
@@ -164,25 +165,28 @@ class BookmarkDatabase extends Bookmark {
    * @param object $owner
    *   A user object from which we can grab the uid. If not provided, we'll
    *   grab the global "$user" variable.
+   * @param string $desc
+   *   An optional description of the bookmark list.
    *
    * @return BookmarkDatabase
    *   A new Bookmark object.
    */
-  public static function createNewList($name, $type = 'bookmark', $owner = NULL) {
+  public static function createNewList($name, $type = 'bookmark', $owner = NULL, $desc = '') {
     if ($owner === NULL) {
       global $user;
       $owner = $user;
     }
-    drupal_alter(ISLANDORA_BOOKMARK_DATABASE_LIST_CREATION_HOOK, $name, $type, $owner);
+    drupal_alter(ISLANDORA_BOOKMARK_DATABASE_LIST_CREATION_HOOK, $name, $type, $owner, $desc);
+
     $fields = array(
       'listname' => $name,
       'listowner' => $owner->uid,
       'type' => $type,
+      'descrip' => $desc,
     );
     $list_id = db_insert('islandora_bookmark_list_names')
       ->fields($fields)
       ->execute();
-
     return static::getList($list_id, FALSE);
   }
 
