@@ -206,19 +206,12 @@ function islandora_bookmark_block_view($delta = '') {
       // Block intended for use on the list view page.
       // EX: 'islandora-bookmark/listid/1'.
       if (arg(0) == 'islandora-bookmark') {
-        $uri = url(current_path(), array('absolute' => TRUE));
         $list_id = arg(2);
         if ($list_id) {
           $bookmark = Bookmark::getList($list_id);
-          $user = user_load($bookmark->bookmarkOwner);
-          $block['content'] = theme(
-            'islandora_bookmark_list_info',
-            array(
-              'name' => $bookmark->bookmarkName,
-              'user' => $user->name,
-              'description' => $bookmark->bookmarkDescription,
-              'link' => $uri,
-            )
+          $block['content'] = array(
+            '#theme' => 'islandora_bookmark_list_info',
+            '#bookmark' => $bookmark,
           );
         }
       }
@@ -272,10 +265,11 @@ function islandora_bookmark_theme() {
     ),
     'islandora_bookmark_list_info' => array(
       'variables' => array(
-        'name' => "",
-        'user' => "",
-        'description' => "",
-        'link' => "",
+        'bookmark' => NULL,
+        'name' => '',
+        'user' => '',
+        'description' => '',
+        'link' => '',
       ),
       'template' => 'theme/islandora-bookmark-list-info',
     ),
