@@ -46,13 +46,11 @@ function islandora_bookmark_menu() {
   $items['islandora-bookmark/listid/%/view'] = array(
     'title callback' => 'islandora_bookmark_list_title',
     'title arguments' => array(2),
-    'page callback' => 'theme',
-    'page arguments' => array(
-      'islandora_bookmark_list_columns',
-      array('id' => 2),
-    ),
+    'page callback' => 'islandora_bookmark_view_bookmark',
+    'page arguments' => array(2),
     'access callback' => 'islandora_bookmark_access',
     'access arguments' => array(2),
+    'file' => 'theme/theme.inc',
   );
   $items['islandora-bookmark/listid/%/rss'] = array(
     'title' => 'RSS Feed',
@@ -256,11 +254,11 @@ function islandora_bookmark_theme() {
     ),
     'islandora_bookmark_list_columns' => array(
       'template' => 'theme/islandora-bookmark-list-columns',
-      'variables' => array('id' => NULL),
+      'variables' => array('bookmark_id' => NULL),
       'file' => 'theme/theme.inc',
     ),
     'islandora_bookmark_list_links' => array(
-      'variables' => array('id' => NULL, 'current' => NULL),
+      'variables' => array('bookmark_id' => NULL, 'current' => NULL),
       'file' => 'theme/theme.inc',
     ),
     'islandora_bookmark_list_info' => array(

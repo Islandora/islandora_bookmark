@@ -445,7 +445,7 @@ abstract class Bookmark implements BookmarkInterface {
     // This is the list links.
     $form['bookmark_list_links'] = theme(
       'islandora_bookmark_list_links',
-      array('id' => $this->bookmarkId, 'current' => 'manage')
+      array('bookmark_id' => $this->bookmarkId, 'current' => 'manage')
     );
 
     // Do pager calcuations to limit the number of objects displayed per page.
