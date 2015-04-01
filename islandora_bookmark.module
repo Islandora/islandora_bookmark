@@ -545,7 +545,7 @@ function islandora_bookmark_display_list($list_id) {
     return islandora_bookmark_detailed_forms($list_id);
   }
   else {
-    return theme($display, array('id' => $list_id));
+    return theme($display, array('bookmark_id' => $list_id));
   }
 }
 
