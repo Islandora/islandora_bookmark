@@ -32,7 +32,9 @@ Enable 'Bookmark' in Administration » Islandora » Solr index » Solr Settings 
 
 Set the permissions in Administration » People (admin/people/permissions). There are permissions to administer, use, and share bookmarks. Anonymous users can never share bookmarks.
 
-The bookmark tool only displays on Islandora object pages for logged-in Drupal users with existing bookmark lists. The admin page has an option to create a default bookmark list for each individual user. Users cannot delete their default lists. The first time you enable default bookmark lists, you will have to log out and log back in before you can view your default list.
+The admin page has an option to create a default bookmark list for each individual user (Users cannot delete their default lists). The first time you enable default bookmark lists, you will have to log out and log back in before you can view your default list.
+
+If a user is anonymous, adds items to a bookmark list, and then logs in those items will be added to a new list, or appended to their default list.
 
 ### Customization
 
