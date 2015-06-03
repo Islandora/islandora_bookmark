@@ -62,6 +62,7 @@ function islandora_bookmark_csv_exports_config_form($form, &$form_state, $config
     '#value' => $fields,
     '#prefix' => '<div id="islandora-bookmark-csv-exports-solr-wrapper">',
     '#suffix' => '</div>',
+    '#required' => TRUE,
   );
   $form['configuration']['solr_autocomplete'] = array(
     '#type' => 'textfield',

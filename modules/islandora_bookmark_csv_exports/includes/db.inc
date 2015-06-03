@@ -16,7 +16,7 @@
  */
 function islandora_bookmark_csv_exports_get_configurations() {
   $configurations = array();
-  $result = db_query('SELECT configuration_id, configuration_name, machine_name, descrip FROM {islandora_bookmark_csv_exports}');
+  $result = db_query('SELECT configuration_id, configuration_name, machine_name, descrip, config_fields FROM {islandora_bookmark_csv_exports}');
   foreach ($result as $record) {
     $config_name = $record->configuration_name;
     $configurations[] = array(
@@ -24,6 +24,7 @@ function islandora_bookmark_csv_exports_get_configurations() {
       'id' => $record->configuration_id,
       'machine_name' => $record->machine_name,
       'descrip' => $record->descrip,
+      'fields' => $record->config_fields,
     );
   }
   return $configurations;

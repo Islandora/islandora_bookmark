@@ -81,7 +81,9 @@ function islandora_bookmark_csv_exports_islandora_bookmark_export_handler() {
   $configs = islandora_bookmark_csv_exports_get_configurations();
   $handlers = array();
   foreach ($configs as $config) {
-    $handlers['Bookmark CSV'][$config['descrip']] = array(new IslandoraBookmarkCSVExportsExport($config['id']), 'export');
+    if (!empty($config['descrip']) && $config['fields']) {
+      $handlers['Bookmark CSV'][$config['descrip']] = array(new IslandoraBookmarkCSVExportsExport($config['id']), 'export');
+    }
   }
   return $handlers;
 }
