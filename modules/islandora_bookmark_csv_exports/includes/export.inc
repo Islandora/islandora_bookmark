@@ -46,13 +46,23 @@ class IslandoraBookmarkCSVExportsExport {
         $value = implode($config['delimiter'], $value);
         return $value;
       };
+      $added_pid = FALSE;
+      if (!isset($solr_fields['PID'])) {
+        $solr_fields['PID'] = 'PID';
+        $added_pid = TRUE;
+      }
       foreach ($pids as $pid) {
         $query_processor = new IslandoraSolrQueryProcessor();
         $query_processor->solrQuery = 'PID:"' . $pid . '"';
+        // Solr needs the PID field to be here to avoid warnings.
         $query_processor->solrParams['fl'] = implode(', ', $solr_fields);
         $query_processor->executeQuery(FALSE);
         if ($query_processor->islandoraSolrResult['response']['numFound'] > 0) {
           $solr_results_doc = $query_processor->islandoraSolrResult['response']['objects']['0']['solr_doc'];
+          // If we added the PID to appease Solr remove it now.
+          if ($added_pid) {
+            unset($solr_results_doc['PID']);
+          }
           $solr_results_doc = array_filter(array_map($scrub_csv, $solr_results_doc));
           // Ensure we only provide results for what is specified.
           $csv_line = array_intersect_key(drupal_map_assoc($headers), $solr_results_doc);
