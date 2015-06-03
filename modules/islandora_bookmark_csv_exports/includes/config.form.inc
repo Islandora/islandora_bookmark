@@ -25,7 +25,7 @@ function islandora_bookmark_csv_exports_config_form($form, &$form_state, $config
   $fields = isset($form_state['input']['fields']) ? $form_state['input']['fields'] : $default_fields;
 
   if (isset($form_state['triggering_element'])) {
-    if ($form_state['triggering_element']['#name'] == 'islandora-csv-exports-solr-add' && !empty($form_state['values']['solr_autocomplete'])) {
+    if ($form_state['triggering_element']['#name'] == 'islandora-bookmark-csv-exports-solr-add' && !empty($form_state['values']['solr_autocomplete'])) {
       if (!empty($fields)) {
         $fields = $fields . ', ' . $form_state['input']['solr_autocomplete'];
       }
@@ -60,7 +60,7 @@ function islandora_bookmark_csv_exports_config_form($form, &$form_state, $config
     '#title' => t('Fields to be exported'),
     '#description' => t('The order in which the fields appear separated by spaces or commas will dictate the write order in the CSV.'),
     '#value' => $fields,
-    '#prefix' => '<div id="islandora-csv-exports-solr-wrapper">',
+    '#prefix' => '<div id="islandora-bookmark-csv-exports-solr-wrapper">',
     '#suffix' => '</div>',
   );
   $form['configuration']['solr_autocomplete'] = array(
