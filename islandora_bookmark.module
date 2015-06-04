@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Module used to track and manage user defined lists of pids.
@@ -93,7 +92,16 @@ function islandora_bookmark_menu() {
     'access arguments' => array('administer islandora_bookmark'),
     'file' => 'includes/admin.form.inc',
   );
-
+  $items['admin/islandora/tools/islandora-bookmark/configure'] = array(
+    'title' => 'Bookmark',
+    'description' => 'Configure settings for the Bookmark module.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('islandora_bookmark_admin_settings'),
+    'access arguments' => array('administer islandora_bookmark'),
+    'file' => 'includes/admin.form.inc',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => 0,
+  );
   return $items;
 }
 
