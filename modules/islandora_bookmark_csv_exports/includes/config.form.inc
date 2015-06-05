@@ -92,6 +92,8 @@ function islandora_bookmark_csv_exports_config_form($form, &$form_state, $config
   $form['delete'] = array(
     '#type' => 'submit',
     '#value' => t('Delete'),
+    '#submit' => array('islandora_bookmark_csv_exports_config_form_submit'),
+    '#limit_validation_errors' => array(array('configuration_id')),
   );
   return $form;
 }
@@ -107,6 +109,9 @@ function islandora_bookmark_csv_exports_config_form_validate($form, $form_state)
       if (islandora_bookmark_csv_exports_description_exists($form_state['values']['description'], $form_state['values']['configuration_id'])) {
         form_error($form['configuration']['description'], t('A configuration with the description of @description already exists.', array('@description' => $form_state['values']['description'])));
       }
+    }
+    if (empty($form_state['input']['fields'])) {
+      form_error($form['configuration']['fields'], t('Fields field is required.'));
     }
   }
 }
