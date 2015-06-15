@@ -521,11 +521,22 @@ abstract class Bookmark implements BookmarkInterface {
       $export_styles = array();
       $export = islandora_bookmark_get_export_options();
       $export_options['default'] = t('- Export type -');
-
+      // As export options can be user configurable and want to maintain
+      // human readability through the UI need to account for the fact that
+      // some options could have spaces in them. If spaces are encountered in
+      // the $_POST Drupal will not pick them up in the form state values.
+      // As such two formats can be used one which specifics a callable
+      // and a human-readable pair and the old form.
       foreach ($export as $module_name => $export_array) {
         foreach ($export_array as $name => $export_func) {
-          $export_options[t("@module_name", array("@module_name" => $module_name))][$name] = $name;
-          $form_state['islandora_bookmark_export'][$name] = $export_func;
+          if (is_callable($export_func)) {
+            $export_options[t("@module_name", array("@module_name" => $module_name))][$name] = $name;
+            $form_state['islandora_bookmark_export'][$name] = $export_func;
+          }
+          else {
+            $export_options[t("@module_name", array("@module_name" => $module_name))][$name] = $export_func['human_readable'];
+            $form_state['islandora_bookmark_export'][$name] = $export_func['callable'];
+          }
           $export_styles[$name] = islandora_bookmark_get_export_format_options($name);
         }
       }
