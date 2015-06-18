@@ -789,7 +789,7 @@ function islandora_bookmark_fedora_repository_object_form(array $form, array &$f
       if (user_access('use islandora_bookmark')) {
         if (!count($containing_lists)) {
           $form['islandora_bookmark']['title'] = array(
-            '#markup' => '<h3>' . t('@type', array('@type' => ucwords(variable_get('islandora_bookmark_type', 'bookmark')))) . ':</h3>',
+            '#markup' => '<h3>' . t('@type', array('@type' => ucwords(variable_get('islandora_bookmark_type', 'bookmark')))) . 's:</h3>',
           );
         }
         $form['islandora_bookmark']['add_bookmarks'] = array(
@@ -798,7 +798,7 @@ function islandora_bookmark_fedora_repository_object_form(array $form, array &$f
         );
         $form['islandora_bookmark']['add_button'] = array(
           '#type' => 'submit',
-          '#value' => t('Add @type', array('@type' => variable_get('islandora_bookmark_type', 'bookmark'))),
+          '#value' => t('Add to @type', array('@type' => variable_get('islandora_bookmark_type', 'bookmark'))),
           '#ajax' => array(
             'event' => 'click',
             'callback' => 'islandora_bookmark_add_pid',
