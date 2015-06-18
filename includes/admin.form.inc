@@ -21,6 +21,7 @@ function islandora_bookmark_admin_settings(array $form, array &$form_state) {
     'list_type' => array(
       '#type' => 'textfield',
       '#title' => t('The name of the type of list.'),
+      '#description' => t('The unpluralized name of the type of lists such as bookmark or favorite.'),
       '#default_value' => variable_get('islandora_bookmark_type', 'bookmark'),
     ),
     'overview_page_elements' => array(
