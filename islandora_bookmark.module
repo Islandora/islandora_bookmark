@@ -764,19 +764,9 @@ function islandora_bookmark_fedora_repository_object_form(array $form, array &$f
     );
   }
 
-  if (!isset($_SESSION['islandora_bookmark'])) {
-    $owned_results = db_query('SELECT listname, listid from {islandora_bookmark_list_names} WHERE listowner = :listowner', array(':listowner' => $user->uid));
-    $owned_lists = array();
-    foreach ($owned_results as $record) {
-      $owned_lists[$record->listid] = $record->listname;
-    }
-  }
-  else {
-    $owned_lists = array();
-    foreach ($_SESSION['islandora_bookmark'] as $value) {
-      $temp_list = $value;
-      $owned_lists[$temp_list->getId()] = $temp_list->bookmarkName;
-    }
+  $lists = islandora_bookmark_get_user_owned_bookmarks();
+  foreach ($lists as $list) {
+    $owned_lists[$list->getId()] = $list->bookmarkName;
   }
 
   if (count($owned_lists)) {
