@@ -252,7 +252,6 @@ abstract class Bookmark implements BookmarkInterface {
    *   An array of strings, representing object PIDs.
    */
   public function addPids($pids) {
-    $pids = array_filter($pids, 'islandora_object_load');
     foreach ($pids as $pid) {
       $this->addPid($pid);
     }
