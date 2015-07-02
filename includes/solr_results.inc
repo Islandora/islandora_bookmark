@@ -53,10 +53,8 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
    *   An array containing form structure.
    */
   public function formGet($form, &$form_state, $object_results) {
-    $form_state['islandora_solr_query_processor'] = $this->islandoraSolrQueryProcessor;
     module_load_include('inc', 'islandora_bookmark', 'includes/api');
-
-    form_load_include($form_state, 'inc', 'islandora_bookmark', 'IslandoraSolrResultsBookmark');
+    $form_state['islandora_solr_query_processor'] = $this->islandoraSolrQueryProcessor;
 
     if (module_exists('citation_exporter')) {
       if (CitationExporter::ReadyToExport()) {
@@ -75,8 +73,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
     $header = $this->getTableHeader();
     $rows = array();
     foreach ($object_results as $object_result) {
-      $doc = $object_result['solr_doc'];
-      $rows[$doc['PID']] = $this->getTableRow($object_result);
+      $rows[$object_result['PID']] = $this->getTableRow($object_result);
     }
 
     if (count($rows) > 0) {
@@ -117,13 +114,13 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
    */
   protected function getTableRow($object_result) {
     $doc = $object_result['solr_doc'];
-
+    $solr_field = variable_get('islandora_solr_object_label_field', 'fgs_label_s');
     $markup = '';
-    if (isset($doc['object_label'])) {
-      $markup = $doc['object_label'];
+    if (isset($doc[$solr_field])) {
+      $markup = $doc[$solr_field];
     }
     else {
-      $markup = $doc['PID'];
+      $markup = $object_result['PID'];
     }
 
     $object_url_info = array(
@@ -133,12 +130,15 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
     );
 
     return array(
-      'markup' => islandora_bookmark_generate_markup($doc['PID'], $object_url_info),
+      'markup' => islandora_bookmark_generate_markup($object_result['PID'], $object_url_info),
     );
   }
 
   /**
    * Get the "actions" section of the form.
+   *
+   * @param array $form_state
+   *   The Drupal form state.
    *
    * @return array
    *   A form fragment containing a number of actions which might be performed
@@ -159,9 +159,21 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
       $export_options['default'] = t('- Export type -');
       $export_styles = array();
       foreach ($export as $module_name => $export_array) {
+        // As export options can be user configurable and want to maintain
+        // human readability through the UI need to account for the fact that
+        // some options could have spaces in them. If spaces are encountered in
+        // the $_POST Drupal will not pick them up in the form state values.
+        // As such two formats can be used one which specifics a callable
+        // and a human-readable pair and the old form.
         foreach ($export_array as $name => $export_func) {
-          $export_options[$module_name][$name] = $name;
-          $form_state['islandora_bookmark_export'][$name] = $export_func;
+          if (is_callable($export_func)) {
+            $export_options[t("@module_name", array("@module_name" => $module_name))][$name] = $name;
+            $form_state['islandora_bookmark_export'][$name] = $export_func;
+          }
+          else {
+            $export_options[t("@module_name", array("@module_name" => $module_name))][$name] = $export_func['human_readable'];
+            $form_state['islandora_bookmark_export'][$name] = $export_func['callable'];
+          }
           $export_styles[$name] = islandora_bookmark_get_export_format_options($name);
         }
       }
@@ -182,7 +194,6 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
             '#title' => t('Style'),
             '#options' => $export_styles[$key],
             '#weight' => 4,
-            '#name' => 'islandora_bookmark_export_styles_' . $key,
             '#states' => array(
               'visible' => array(
                 ':input[name="export_options"]' => array('value' => $key),
@@ -328,10 +339,12 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
    *
    * Export all PIDs the search yielded.
    *
+   * @param array $form
+   *   The array representing a Drupal form.
    * @param array $form_state
    *   The array of form state.
    */
-  protected function exportAll(&$form_state) {
+  protected function exportAll(&$form, &$form_state) {
     $pids = $this->getAll($form_state);
     $this->export($pids, $form_state);
   }
@@ -341,10 +354,12 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
    *
    * Export the selected PIDs the search yielded.
    *
+   * @param array $form
+   *   The array representing a Drupal form.
    * @param array $form_state
    *   The array of form state.
    */
-  protected function exportSelected(&$form_state) {
+  protected function exportSelected(&$form, &$form_state) {
     $pids = $this->getSelected($form_state);
     $this->export($pids, $form_state);
   }
@@ -364,9 +379,8 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
     $params = array(
       $pids,
     );
-
-    if (array_key_exists('islandora_bookmark_export_styles_' . $key, $form_state['input'])) {
-      $params[] = $form_state['input']['islandora_bookmark_export_styles_' . $key];
+    if (array_key_exists($key, $form_state['values'])) {
+      $params[] = $form_state['values'][$key];
     }
 
     call_user_func_array($form_state['islandora_bookmark_export'][$key], $params);
@@ -377,10 +391,12 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
    *
    * Redirect to the given list.
    *
+   * @param array $form
+   *   The array representing a Drupal form.
    * @param array $form_state
    *   The array of form state.
    */
-  protected function goToBookmark(&$form_state) {
+  protected function goToBookmark(&$form, &$form_state) {
     $el = $form_state['complete form']['islandora_bookmark_save_fieldset']['fieldset']['save_options'];
     $key = drupal_array_get_nested_value($form_state['values'], $el['#parents']);
     drupal_goto('islandora-bookmark/listid/' . $key);
@@ -391,10 +407,12 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
    *
    * Save all PIDs the search yielded to the selected list.
    *
+   * @param array $form
+   *   The array representing a Drupal form.
    * @param array $form_state
    *   The array of form state.
    */
-  protected function saveAll(&$form_state) {
+  protected function saveAll(&$form, &$form_state) {
     $pids = $this->getAll($form_state);
     $this->save($pids, $form_state);
   }
@@ -404,10 +422,12 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
    *
    * Save the selected PIDs the search yielded to the selected list.
    *
+   * @param array $form
+   *   The array representing a Drupal form.
    * @param array $form_state
    *   The array of form state.
    */
-  protected function saveSelected(&$form_state) {
+  protected function saveSelected(&$form, &$form_state) {
     $pids = $this->getSelected($form_state);
     $this->save($pids, $form_state);
   }
@@ -452,8 +472,8 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
     if (count($skipped_pids) > 0) {
       drupal_set_message(format_plural(
         count($skipped_pids),
-        'The selected object (!skipped_pids) was not added as it already exists in the bookmark list "@listname".',
-        'The selected objects (!skipped_pids) were not added as they already exist in the bookmark list "@listname".',
+        'The selected object (@skipped_pids) was not added as it already exists in the bookmark list "@listname".',
+        'The selected objects (@skipped_pids) were not added as they already exist in the bookmark list "@listname".',
         array(
           '@skipped_pids' => implode(' ', $skipped_pids),
           '@listname' => $bookmark_object->bookmarkName,
@@ -491,7 +511,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
 
     $clicked_button = $form_state['clicked_button'];
     if (isset($clicked_button['#action_submit'])) {
-      $params = array(&$form_state);
+      $params = array(&$form, &$form_state);
       foreach ((array) $clicked_button['#action_submit'] as $submit_function) {
         call_user_func_array(array($this, $submit_function), $params);
       }
@@ -506,11 +526,13 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
 
     // Helper anonymous function... Just get the PID.
     $get_pid = function($result) {
-      $doc = $result['solr_doc'];
-      return $doc['PID'];
+      return $result['PID'];
     };
 
     $qp = $this->islandoraSolrQueryProcessor;
+    $old_params = $qp->solrParams;
+    $qp->solrParams['fl'] = 'PID';
+    $qp->solrStart = 0;
     $qp->solrLimit = 10000;
 
     // Handle the first set separately, so we can get the total number for our
@@ -522,6 +544,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
     $pids = array_map($get_pid, $object_results);
 
     for ($i = $qp->solrLimit; $i < $result_count; $i += $qp->solrLimit) {
+      $qp->solrStart = $i;
       $qp->executeQuery();
       $solr_results = $qp->islandoraSolrResult;
       $object_results = $solr_results['response']['objects'];
@@ -531,6 +554,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
         array_map($get_pid, $object_results)
       );
     }
+    $qp->solrParams = $old_params;
 
     return $pids;
   }

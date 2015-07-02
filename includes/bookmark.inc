@@ -9,6 +9,7 @@
  * Interface defining the base operations required to implement a backend.
  */
 interface BookmarkInterface {
+
   /**
    * Adds the specified PID to the given list.
    *
@@ -19,6 +20,12 @@ interface BookmarkInterface {
 
   /**
    * Get PIDs associated with this list.
+   *
+   * @param int $offset
+   *   The starting offset of pids to retrieve.
+   *
+   * @param int $limit
+   *   The number of pids to retrieve.
    *
    * @return array
    *   An array of string, each representing an ID in a list.
@@ -71,12 +78,20 @@ interface BookmarkInterface {
  * constructed such that it contains a listname and listid for uniqueness.
  */
 abstract class Bookmark implements BookmarkInterface {
+
   /**
    * The name of the object.
    *
    * @var string
    */
   public $bookmarkName;
+
+  /**
+   * The description of the object.
+   *
+   * @var string
+   */
+  public $bookmarkDescription;
 
   /**
    * The owner of the object.
@@ -100,52 +115,21 @@ abstract class Bookmark implements BookmarkInterface {
   protected $isPersistent;
 
   /**
+   * Flag whether the object can be deleted or not.
+   *
+   * @var bool
+   */
+  protected $isDeletable;
+
+  /**
    * Constructor for the Bookmark object.
    */
-  public function __construct($id, $name, $owner) {
+  public function __construct($id, $name, $owner, $desc = "") {
     $this->bookmarkId = $id;
     $this->bookmarkName = $name;
     $this->bookmarkOwner = $owner;
-  }
-
-  /**
-   * Somewhat more graceful deprecation of old properties.
-   */
-  public function __get($property) {
-    if ($property == 'userList') {
-      module_load_include('inc', 'islandora', 'includes/utilities');
-      $message = islandora_deprecated('7.x-1.3', 'Use the methods {get,add,remove}Users(), instead of accessing as a property.');
-      trigger_error(filter_xss($message), E_USER_DEPRECATED);
-      return $this->getUsers();
-    }
-    elseif ($property == 'pidList') {
-      module_load_include('inc', 'islandora', 'includes/utilities');
-      $message = islandora_deprecated('7.x-1.3', 'Use the methods {get,add,remove}Pids(), instead of accessing as a property.');
-      trigger_error(filter_xss($message), E_USER_DEPRECATED);
-      return $this->getPids();
-    }
-  }
-
-  /**
-   * Somewhat more graceful deprecation of old properties.
-   */
-  public function __set($property, $value) {
-    if ($property == 'userList') {
-      module_load_include('inc', 'islandora', 'includes/utilities');
-      $message = islandora_deprecated('7.x-1.3', 'Use the methods {get,add,remove}Users(), instead of accessing as a property.');
-      trigger_error(filter_xss($message), E_USER_DEPRECATED);
-      $this->removeUsers($this->getUsers());
-      $this->addUsers($value);
-      return $value;
-    }
-    elseif ($property == 'pidList') {
-      module_load_include('inc', 'islandora', 'includes/utilities');
-      $message = islandora_deprecated('7.x-1.3', 'Use the methods {get,add,remove}Pids(), instead of accessing as a property.');
-      trigger_error(filter_xss($message), E_USER_DEPRECATED);
-      $this->removeAllPids();
-      $this->addPids($value);
-      return $value;
-    }
+    $this->bookmarkDescription = $desc;
+    $this->isDeletable = TRUE;
   }
 
   /**
@@ -166,6 +150,16 @@ abstract class Bookmark implements BookmarkInterface {
    */
   public function getIsPersistent() {
     return $this->isPersistent;
+  }
+
+  /**
+   * Accessor for whether the object is deletable.
+   *
+   * @return mixed
+   *   The value of $this->isDeletable.
+   */
+  public function getIsDeletable() {
+    return $this->isDeletable;
   }
 
   /**
@@ -192,7 +186,6 @@ abstract class Bookmark implements BookmarkInterface {
       // Pass off to BookmarkDatabase.
       $bookmark = BookmarkDatabase::getList($id, FALSE);
     }
-
     return $bookmark;
   }
 
@@ -259,7 +252,6 @@ abstract class Bookmark implements BookmarkInterface {
    *   An array of strings, representing object PIDs.
    */
   public function addPids($pids) {
-    $pids = array_filter($pids, 'islandora_object_load');
     foreach ($pids as $pid) {
       $this->addPid($pid);
     }
@@ -285,15 +277,20 @@ abstract class Bookmark implements BookmarkInterface {
    *
    * @param string $name
    *   A name for the newly created list.
+   * @param string $desc
+   *   An optional description for the list.
+   *
+   * @return BookmarkSession|BookmarkDatabase
+   *   The BookmarkSession or BookmarkDatabase object that is created.
    */
-  public static function createNewList($name) {
+  public static function createNewList($name, $desc = "") {
     global $user;
 
     if ($user->uid === 0) {
-      return BookmarkSession::createNewList($name);
+      return BookmarkSession::createNewList($name, NULL, $desc);
     }
     else {
-      return BookmarkDatabase::createNewList($name);
+      return BookmarkDatabase::createNewList($name, 'bookmark', NULL, $desc);
     }
   }
 
@@ -314,6 +311,16 @@ abstract class Bookmark implements BookmarkInterface {
    */
   public function changeListName($name) {
     $this->bookmarkName = $name;
+  }
+
+  /**
+   * Changes the description of the object in the session or the database.
+   *
+   * @param string $description
+   *   The new description of the object.
+   */
+  public function changeDescription($description) {
+    $this->bookmarkDescription = $description;
   }
 
   /**
@@ -357,12 +364,10 @@ abstract class Bookmark implements BookmarkInterface {
    *   theme_tableselect().
    */
   protected function getTableHeader() {
-    $header = array('markup' => array('data' => t('Label')));;
-
+    $header = array('markup' => array('data' => t('Label')));
     if ($this->managementAccess()) {
       $header['remove'] = array('data' => t('Operations'));
     }
-
     return $header;
   }
 
@@ -388,7 +393,6 @@ abstract class Bookmark implements BookmarkInterface {
         '#button_type' => 'submit',
         '#pid' => $pid,
         '#value' => t('Remove'),
-
       );
       $row['remove'] = array(
         'data' => drupal_render($remove_button),
@@ -403,7 +407,6 @@ abstract class Bookmark implements BookmarkInterface {
    * Form building method.
    */
   public function formGet($form, &$form_state) {
-    global $user;
     if (module_exists('citation_exporter')) {
       if (CitationExporter::ReadyToExport()) {
         $citation_export_head = array(
@@ -438,22 +441,11 @@ abstract class Bookmark implements BookmarkInterface {
       ),
     );
 
-    // This is the RSS icon link.
-    if ($this->getIsPersistent() && $this->getPidCount() > 0) {
-      $id = $this->getId();
-      $form['bookmark_rss'] = array(
-        '#weight' => -1,
-        '#markup' => l(theme('image', array(
-          'path' => drupal_get_path('module', 'islandora_bookmark') . '/images/rss.png',
-          'title' => t('Present Bookmark list in RSS form'),
-          'attributes' => array(),
-        )), "islandora-bookmark/listid/$id/rss", array('html' => TRUE)),
-        '#prefix' => '<div id="islandora-bookmark-rss-format">',
-        '#suffix' => '</div>',
-      );
-    }
-
-    $rows = array();
+    // This is the list links.
+    $form['bookmark_list_links'] = theme(
+      'islandora_bookmark_list_links',
+      array('bookmark_id' => $this->bookmarkId, 'current' => 'manage')
+    );
 
     // Do pager calcuations to limit the number of objects displayed per page.
     $num_eles = variable_get('islandora_bookmark_detailed_page_elements', 10);
@@ -469,8 +461,8 @@ abstract class Bookmark implements BookmarkInterface {
     $form['bookmarks']['fieldset'] += array(
       'table' => $table += array(
         '#empty' => t('@type list is empty.', array(
-          '@type' => ucwords(variable_get('islandora_bookmark_type', 'bookmark')),
-        )),
+      '@type' => ucwords(variable_get('islandora_bookmark_type', 'bookmark')),
+    )),
         '#weight' => -2,
       ),
       'pager' => array(
@@ -496,6 +488,8 @@ abstract class Bookmark implements BookmarkInterface {
    *
    * @param array $container
    *   A reference to a part of the form, where the actions should be added.
+   * @param array $form_state
+   *   The Drupal form state.
    */
   protected function formAddActions(&$container, &$form_state) {
     $groups = array();
@@ -526,11 +520,22 @@ abstract class Bookmark implements BookmarkInterface {
       $export_styles = array();
       $export = islandora_bookmark_get_export_options();
       $export_options['default'] = t('- Export type -');
-
+      // As export options can be user configurable and want to maintain
+      // human readability through the UI need to account for the fact that
+      // some options could have spaces in them. If spaces are encountered in
+      // the $_POST Drupal will not pick them up in the form state values.
+      // As such two formats can be used one which specifics a callable
+      // and a human-readable pair and the old form.
       foreach ($export as $module_name => $export_array) {
         foreach ($export_array as $name => $export_func) {
-          $export_options[t("@module_name", array("@module_name" => $module_name))][$name] = $name;
-          $form_state['islandora_bookmark_export'][$name] = $export_func;
+          if (is_callable($export_func)) {
+            $export_options[t("@module_name", array("@module_name" => $module_name))][$name] = $name;
+            $form_state['islandora_bookmark_export'][$name] = $export_func;
+          }
+          else {
+            $export_options[t("@module_name", array("@module_name" => $module_name))][$name] = $export_func['human_readable'];
+            $form_state['islandora_bookmark_export'][$name] = $export_func['callable'];
+          }
           $export_styles[$name] = islandora_bookmark_get_export_format_options($name);
         }
       }
@@ -543,7 +548,6 @@ abstract class Bookmark implements BookmarkInterface {
             '#title' => t('Style'),
             '#options' => $value,
             '#weight' => 0,
-            '#name' => 'islandora_bookmark_export_styles_' . $key,
             '#states' => array(
               'visible' => array(
                 ':input[name="bookmarks[fieldset][export_options]"]' => array('value' => $key),
@@ -644,12 +648,11 @@ abstract class Bookmark implements BookmarkInterface {
             else {
               $output_user = user_load($remove_user)->name;
             }
-            drupal_set_message(t('The user @username has been removed from the list @listname.',
-                array(
-                  '@listname' => $this->bookmarkName,
-                  '@username' => $output_user,
-                )
-              ));
+            drupal_set_message(t('The user @username has been removed from the list @listname.', array(
+              '@listname' => $this->bookmarkName,
+              '@username' => $output_user,
+                    )
+            ));
             $this->removeUsers(array($remove_user));
           }
         }
@@ -730,11 +733,11 @@ abstract class Bookmark implements BookmarkInterface {
           }
           // Get all users for use in select for forms.
           $result = db_select('users', 'u')
-            ->fields('u', array('uid', 'name'))
-            ->condition('STATUS', 0, '!=')
-            ->condition('uid', $user->uid, '!=')
-            ->orderBy('uid')
-            ->execute();
+              ->fields('u', array('uid', 'name'))
+              ->condition('STATUS', 0, '!=')
+              ->condition('uid', $user->uid, '!=')
+              ->orderBy('uid')
+              ->execute();
 
           $options += $result->fetchAllAssoc('uid', PDO::FETCH_ASSOC);
           if (isset($options['0'])) {
@@ -811,7 +814,7 @@ abstract class Bookmark implements BookmarkInterface {
   /**
    * Submission callback; export the selected PIDs.
    */
-  protected function formExportSelected($form, $form_state) {
+  protected function formExportSelected(&$form, &$form_state) {
     $pids = $this->formGetSelected($form_state);
     $this->formExport($pids, $form_state);
   }
@@ -819,7 +822,7 @@ abstract class Bookmark implements BookmarkInterface {
   /**
    * Submission callback; export all PIDs in the list.
    */
-  protected function formExportAll($form, $form_state) {
+  protected function formExportAll(&$form, &$form_state) {
     $pids = $this->formGetAll($form_state);
     $this->formExport($pids, $form_state);
   }
@@ -830,30 +833,29 @@ abstract class Bookmark implements BookmarkInterface {
   protected function formExport($pids, $form_state) {
     $el = $form_state['complete form']['bookmarks']['fieldset']['export_options'];
     $key = drupal_array_get_nested_value($form_state['values'], $el['#parents']);
-
     $params = array(
       $pids,
     );
-
-    if (array_key_exists('islandora_bookmark_export_styles_' . $key, $form_state['input'])) {
-      $params[] = $form_state['input']['islandora_bookmark_export_styles_' . $key];
+    if (isset($form_state['values']['bookmarks']['fieldset']['format_opts']['export_styles'])) {
+      if (array_key_exists($key, $form_state['values']['bookmarks']['fieldset']['format_opts']['export_styles'])) {
+        $params[] = $form_state['values']['bookmarks']['fieldset']['format_opts']['export_styles'][$key];
+      }
     }
-
     call_user_func_array($form_state['islandora_bookmark_export'][$key], $params);
   }
 
   /**
    * Submission callback; remove the selected PIDs from the list.
    */
-  protected function formRemoveSelectedFromList($form_state) {
-    $pids = $this->formGetAll($form_state);
+  protected function formRemoveSelectedFromList(&$form, &$form_state) {
+    $pids = $this->formGetSelected($form_state);
     $this->formRemoveFromList($pids, $form_state);
   }
 
   /**
    * Submission callback; remove all PIDs from the list.
    */
-  protected function formRemoveAllFromList($form_state) {
+  protected function formRemoveAllFromList(&$form, &$form_state) {
     $pids = $this->formGetAll($form_state);
     $this->formRemoveFromList($pids, $form_state);
   }
@@ -895,6 +897,9 @@ abstract class Bookmark implements BookmarkInterface {
   /**
    * Get the PIDs of any single remove button(s).
    *
+   * @param array $form_state
+   *   The Drupal form state.
+   *
    * @return array
    *   An array of PIDs--may be empty if there are none present.
    */
@@ -929,9 +934,7 @@ abstract class Bookmark implements BookmarkInterface {
     $errors = form_get_errors();
     if (count($errors) === 0) {
       $page = pager_default_initialize(
-        $this->getPidCount(),
-        variable_get('islandora_bookmark_detailed_page_elements', 10),
-        $form_state['islandora_bookmark_pager_element']
+          $this->getPidCount(), variable_get('islandora_bookmark_detailed_page_elements', 10), $form_state['islandora_bookmark_pager_element']
       );
 
       $form_state['redirect'] = array(
@@ -957,7 +960,7 @@ abstract class Bookmark implements BookmarkInterface {
     if (!empty($broken)) {
       watchdog('islandora_bookmark', 'Broken PIDs encountered: @pids', array(
         '@pids' => implode(', ', $broken),
-      ), WATCHDOG_WARNING);
+          ), WATCHDOG_WARNING);
     }
 
     return $functional;
@@ -973,9 +976,10 @@ abstract class Bookmark implements BookmarkInterface {
     if (!empty($broken)) {
       watchdog('islandora_bookmark', 'Broken PIDs encountered: @pids', array(
         '@pids' => implode(', ', $broken),
-      ), WATCHDOG_WARNING);
+          ), WATCHDOG_WARNING);
     }
 
     return $functional;
   }
+
 }
