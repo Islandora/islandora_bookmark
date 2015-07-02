@@ -765,6 +765,7 @@ function islandora_bookmark_fedora_repository_object_form(array $form, array &$f
   }
 
   $lists = islandora_bookmark_get_user_owned_bookmarks();
+  $owned_lists = array();
   foreach ($lists as $list) {
     $owned_lists[$list->getId()] = $list->bookmarkName;
   }
