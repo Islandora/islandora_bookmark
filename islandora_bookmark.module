@@ -992,7 +992,6 @@ function islandora_bookmark_form_overview_table(array $bookmark_objs) {
     $owner = user_load($bookmark->bookmarkOwner);
     if ($bookmark->bookmarkOwner == 0) {
       $owner_output = variable_get('islandora_bookmark_owner', 'Everyone');
-;
     }
     else {
       $owner_output = $owner->name;
