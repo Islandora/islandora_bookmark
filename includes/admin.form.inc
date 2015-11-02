@@ -28,7 +28,7 @@ function islandora_bookmark_admin_settings(array $form, array &$form_state) {
       '#type' => 'textfield',
       '#title' => t('The owner name to display for anonymous users.'),
       '#description' => t('The name to display in the owner column for users who are not logged in.'),
-      '#default_value' => variable_get('islandora_bookmark_owner', 'Me'),
+      '#default_value' => variable_get('islandora_bookmark_owner', 'Everyone'),
     ),
     'overview_page_elements' => array(
       '#type' => 'textfield',
