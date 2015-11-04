@@ -626,7 +626,7 @@ abstract class Bookmark implements BookmarkInterface {
             $add_user = $form_state['input']['bookmarks']['users']['listusers'];
             if (drupal_strlen($add_user)) {
               if ($add_user == 0) {
-                $output_user = t('Everyone');
+                $output_user = variable_get('islandora_bookmark_owner', 'Everyone');
               }
               else {
                 $output_user = user_load($add_user)->name;
@@ -643,7 +643,7 @@ abstract class Bookmark implements BookmarkInterface {
             $row = $form_state['triggering_element']['#row'];
             $remove_user = $form_state['values']['bookmarks']['users'][$row]['user'];
             if ($remove_user == 0) {
-              $output_user = t('Everyone');
+              $output_user = variable_get('islandora_bookmark_owner', 'Everyone');
             }
             else {
               $output_user = user_load($remove_user)->name;
@@ -683,7 +683,7 @@ abstract class Bookmark implements BookmarkInterface {
             foreach ($bookmark_users as $itr => $uid) {
               $tempuser = user_load($uid);
               if ($tempuser->uid == 0) {
-                $user_output = t('Everyone');
+                $user_output = variable_get('islandora_bookmark_owner', 'Everyone');
               }
               else {
                 $user_output = $tempuser->name;
@@ -728,7 +728,7 @@ abstract class Bookmark implements BookmarkInterface {
           if ($user->uid != 0) {
             $options['0'] = array(
               'uid' => 0,
-              'name' => t('Everyone'),
+              'name' => variable_get('islandora_bookmark_owner', 'Everyone'),
             );
           }
           // Get all users for use in select for forms.
@@ -741,7 +741,7 @@ abstract class Bookmark implements BookmarkInterface {
 
           $options += $result->fetchAllAssoc('uid', PDO::FETCH_ASSOC);
           if (isset($options['0'])) {
-            $options[0]['name'] = t('Everyone');
+            $options[0]['name'] = variable_get('islandora_bookmark_owner', 'Everyone');
           }
 
           $available = array_diff_key($options, drupal_map_assoc($this->getUsers()));

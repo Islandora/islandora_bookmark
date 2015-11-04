@@ -317,7 +317,7 @@ function islandora_bookmark_user_login(&$edit, $account) {
           $default_list_name = format_string($default_list_name, array('@username' => $account->name));
           $persistent_bookmark = BookmarkDefaultDatabaseList::createNewList($default_list_name, 'bookmark_default', $account);
           if (variable_get('islandora_bookmark_share_default_list', FALSE)) {
-            // The anonymous user (uid 0) is considered to be "Everyone".
+            // The anonymous user (uid 0) is set in the admin form.
             $persistent_bookmark->addUser('0');
           }
         }
@@ -339,7 +339,7 @@ function islandora_bookmark_user_login(&$edit, $account) {
       $default_list_name = format_string($default_list_name, array('@username' => $account->name));
       $created_default_list = BookmarkDefaultDatabaseList::createNewList($default_list_name, 'bookmark_default', $account);
       if (variable_get('islandora_bookmark_share_default_list', FALSE)) {
-        // The anonymous user (uid 0) is considered to be "Everyone".
+        // The anonymous user (uid 0) is set in the admin form.
         $created_default_list->addUser('0');
       }
     }
@@ -991,7 +991,7 @@ function islandora_bookmark_form_overview_table(array $bookmark_objs) {
   foreach ($bookmark_objs as $bookmark) {
     $owner = user_load($bookmark->bookmarkOwner);
     if ($bookmark->bookmarkOwner == 0) {
-      $owner_output = t('Everyone');
+      $owner_output = variable_get('islandora_bookmark_owner', 'Everyone');
     }
     else {
       $owner_output = $owner->name;

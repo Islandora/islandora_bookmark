@@ -24,6 +24,12 @@ function islandora_bookmark_admin_settings(array $form, array &$form_state) {
       '#description' => t('The unpluralized name of the type of lists such as bookmark or favorite.'),
       '#default_value' => variable_get('islandora_bookmark_type', 'bookmark'),
     ),
+    'anonymous_owner' => array(
+      '#type' => 'textfield',
+      '#title' => t('The owner name to display for anonymous users.'),
+      '#description' => t('The name to display in the owner column for users who are not logged in.'),
+      '#default_value' => variable_get('islandora_bookmark_owner', 'Everyone'),
+    ),
     'overview_page_elements' => array(
       '#type' => 'textfield',
       '#title' => t('Bookmarks overview table'),
@@ -120,6 +126,7 @@ function islandora_bookmark_admin_settings_submit(array $form, array &$form_stat
       variable_set('islandora_bookmark_overview_page_elements', $form_state['values']['overview_page_elements']);
       variable_set('islandora_bookmark_detailed_page_elements', $form_state['values']['detailed_page_elements']);
       variable_set('islandora_bookmark_type', $form_state['values']['list_type']);
+      variable_set('islandora_bookmark_owner', $form_state['values']['anonymous_owner']);
       variable_set('islandora_bookmark_create_user_default_lists', $form_state['values']['create_user_default_lists']);
       if ($form_state['values']['create_user_default_lists']) {
         variable_set('islandora_bookmark_default_list_name', $form_state['values']['default_list_name']);
@@ -132,6 +139,7 @@ function islandora_bookmark_admin_settings_submit(array $form, array &$form_stat
       variable_del('islandora_bookmark_overview_page_elements');
       variable_del('islandora_bookmark_detailed_page_elements');
       variable_del('islandora_bookmark_type');
+      variable_del('islandora_bookmark_owner');
       variable_del('islandora_bookmark_create_user_default_lists');
       variable_del('islandora_bookmark_default_list_name');
       variable_del('islandora_bookmark_share_default_list');
