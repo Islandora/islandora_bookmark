@@ -10,8 +10,8 @@
  *
  * @global stdClass $user
  *
- * @param string $type
- *   The type of bookmark to search for.
+ * @param string|NULL $type
+ *   Optional type of bookmark to retrieve. Defaults to all bookmarks.
  *
  * @return array
  *   An array of PidList objects.
