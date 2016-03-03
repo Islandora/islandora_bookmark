@@ -10,14 +10,24 @@
  *
  * @global stdClass $user
  *
+ * @param string|NULL $type
+ *   Optional type of bookmark to retrieve. Defaults to all bookmarks.
+ *
  * @return array
  *   An array of PidList objects.
  */
-function islandora_bookmark_get_user_owned_bookmarks() {
+function islandora_bookmark_get_user_owned_bookmarks($type = NULL) {
   global $user;
-
-  $list_query = db_query('SELECT DISTINCT listid FROM {islandora_bookmark_list_names} WHERE listowner = :uid ORDER BY listid', array(':uid' => $user->uid));
-  $listids = (array) $list_query->fetchAll(PDO::FETCH_COLUMN);
+  $list_query = db_select('islandora_bookmark_list_names', 'i')
+    ->fields('i', array('listid'))
+    ->condition('listowner', $user->uid)
+    ->orderBy('listid')
+    ->distinct();
+  if ($type) {
+    $list_query = $list_query->condition('type', $type);
+  }
+  $listids = (array) $list_query->execute()
+    ->fetchAll(PDO::FETCH_COLUMN);
 
   $bookmark_list = array();
   foreach ($listids as $list_id) {
