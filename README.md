@@ -2,7 +2,7 @@
 
 ## Introduction
 
-The Islandora Bookmark module allows users to build, manage, share and track lists of objects. Manage your bookmarks under /islandora_bookmark. There are two ways to add bookmarks to your lists:
+The Islandora Bookmark module allows users to build, manage, share and track lists of objects. Manage your bookmarks under /islandora-bookmark. There are two ways to add bookmarks to your lists:
 
 1. Through object pages: every object page will have a little tool at the bottom to bookmark the
 current object.
