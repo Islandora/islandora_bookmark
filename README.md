@@ -60,7 +60,7 @@ A. Islandora Bookmark provides a Islandora Solr primary display which has to be 
 ## Maintainers/Sponsors
 Current maintainers:
 
-* [Jordan Dukart](https://github.com/jordandukart)
+* [Diego Pino](https://github.com/DiegoPino)
 
 ## Development
 
