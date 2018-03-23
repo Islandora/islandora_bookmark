@@ -9,7 +9,7 @@ current object.
 2. Through Solr searches: Islandora Bookmark provides a SOLR display with functionality to
 bookmark objects based on a custom Solr query.
 
-# Requirements
+## Requirements
 
 This module requires the following modules/libraries:
 
@@ -60,7 +60,7 @@ A. Islandora Bookmark provides a Islandora Solr primary display which has to be 
 ## Maintainers/Sponsors
 Current maintainers:
 
-* [Diego Pino](https://github.com/DiegoPino)
+* [Jordan Dukart](https://github.com/jordandukart)
 
 ## Development
 
