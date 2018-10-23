@@ -6,6 +6,6 @@ depdenencies[] = islandora_solr
 files[] = includes/export.inc
 package = Islandora Tools
 configure = admin/islandora/tools/islandora-bookmark/csv_exports
-version = 7.x-dev
+version = 7.x-1.12
 core = 7.x
 
