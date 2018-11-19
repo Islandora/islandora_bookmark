@@ -7,11 +7,14 @@ The Islandora Bookmark module allows Drupal users to build, manage, share, track
 
 ## Requirements
 
-This module requires the following modules/libraries:
+This module requires the following modules:
 
 * [Islandora](https://github.com/islandora/islandora)
-* [Islandora Solr](https://github.com/islandora/islandora_solr_search) (optional, provides functionality to bulk add objects)
-* [Islandora Bibliography](https://github.com/Islandora/islandora_scholar/tree/7.x/modules/bibliography) (bundled with Scholar, optional, provides additional export formats)
+
+Some features of this module require the following modules:
+
+* [Islandora Solr](https://github.com/islandora/islandora_solr_search) (functionality to bulk add objects)
+* [Islandora Bibliography](https://github.com/Islandora/islandora_scholar/tree/7.x/modules/bibliography) ( provides additional export formats. Bibliography is bundled with Scholar.)
 
 
 ## Installation
