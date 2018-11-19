@@ -14,7 +14,7 @@ This module requires the following modules:
 Some features of this module require the following modules:
 
 * [Islandora Solr](https://github.com/islandora/islandora_solr_search) (functionality to bulk add objects)
-* [Islandora Bibliography](https://github.com/Islandora/islandora_scholar/tree/7.x/modules/bibliography) ( provides additional export formats. Bibliography is bundled with Scholar.)
+* [Islandora Bibliography](https://github.com/Islandora/islandora_scholar/tree/7.x/modules/bibliography) (provides RIS, RTF, PDF export formats and the ability to use citation styles. Bibliography is bundled with Scholar.)
 
 
 ## Installation
