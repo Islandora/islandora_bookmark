@@ -2,20 +2,19 @@
 
 ## Introduction
 
-The Islandora Bookmark module allows users to build, manage, share and track lists of objects. Manage your bookmarks under /islandora-bookmark. There are two ways to add bookmarks to your lists:
+The Islandora Bookmark module allows Drupal users to build, manage, share, track via RSS, and export lists of objects. A user's lists are managed at /islandora-bookmark, and objects can be added to lists individually or from a Solr search results page.
 
-1. Through object pages: every object page will have a little tool at the bottom to bookmark the
-current object.
-2. Through Solr searches: Islandora Bookmark provides a SOLR display with functionality to
-bookmark objects based on a custom Solr query.
 
 ## Requirements
 
-This module requires the following modules/libraries:
+This module requires the following modules:
 
 * [Islandora](https://github.com/islandora/islandora)
-* [Tuque](https://github.com/islandora/tuque)
-* [Islandora Solr](https://github.com/islandora/islandora_solr_search) (optional)
+
+Some features of this module require the following modules:
+
+* [Islandora Solr](https://github.com/islandora/islandora_solr_search) (functionality to bulk add objects)
+* [Islandora Bibliography](https://github.com/Islandora/islandora_scholar/tree/7.x/modules/bibliography) (provides RIS, RTF, PDF export formats and the ability to use citation styles. Bibliography is bundled with Scholar.)
 
 
 ## Installation
@@ -24,17 +23,21 @@ Install as usual, see [this](https://drupal.org/documentation/install/modules-th
 
 ## Configuration
 
-Configure general bookmark settings in Administration » Islandora » Islandora Utility Modules » Bookmark (admin/islandora/tools/islandora-bookmark).
+See the [Wiki documentation](https://wiki.duraspace.org/display/ISLANDORA/Islandora+Bookmark) for full configuration instructions.
+
+Configure general Bookmark settings in Administration » Islandora » Islandora Utility Modules » Bookmark (admin/islandora/tools/islandora-bookmark).
 
 ![Configuration](https://camo.githubusercontent.com/e851eaa47d5ba712ff7e8579a91dd6da2b38ae64/687474703a2f2f692e696d6775722e636f6d2f7664747444534d2e706e67)
 
-Enable 'Bookmark' in Administration » Islandora » Solr index » Solr Settings (admin/islandora/search/islandora_solr/settings).
+The admin page has an option to create a default bookmark list for each individual user. Users cannot delete their default lists. The first time you enable default bookmark lists, you will have to log out and log back in before you can view your default list.
 
 Set the permissions in Administration » People (admin/people/permissions). There are permissions to administer, use, and share bookmarks. Anonymous users can never share bookmarks.
 
-The admin page has an option to create a default bookmark list for each individual user (Users cannot delete their default lists). The first time you enable default bookmark lists, you will have to log out and log back in before you can view your default list.
-
 If a user is anonymous, adds items to a bookmark list, and then logs in those items will be added to a new list, or appended to their default list.
+
+Enable the "Islandora Bookmark" block in Structure » Blocks (/admin/structure/block).
+
+Enable the 'Bookmark' display profile in Administration » Islandora » Solr index » Solr Settings (admin/islandora/search/islandora_solr/settings) and enable the "Islandora Displays" block to allow a user to select this profile if it is not the Default. This profile can also be accessed by appending ?display=bookmark to the Solr results URL.
 
 ### Customization
 
@@ -50,12 +53,6 @@ Having problems or solved a problem? Check out the Islandora google groups for a
 
 * [Islandora Group](https://groups.google.com/forum/?hl=en&fromgroups#!forum/islandora)
 * [Islandora Dev Group](https://groups.google.com/forum/?hl=en&fromgroups#!forum/islandora-dev)
-
-## FAQ
-
-Q. How do I set up bookmarking through Solr?
-
-A. Islandora Bookmark provides a Islandora Solr primary display which has to be enabled in the solr client admin page (admin/islandora/search/islandora_solr). To set up Islandora Solr check the module's documentation. Islandora Solr comes with a 'Display switch' block which lets you switch primary displays. When enabled, the bookmark display can be accessed by appending ?display=bookmark to the Solr results URL.
 
 ## Maintainers/Sponsors
 Current maintainers:
