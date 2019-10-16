@@ -496,7 +496,7 @@ class IslandoraSolrResultsBookmark extends IslandoraSolrResults {
     $clicked_button = $form_state['clicked_button'];
     if (isset($clicked_button['#action_validate'])) {
       foreach ((array) $clicked_button['#action_validate'] as $validator) {
-        call_user_func(array($this, $validator), $form, $form_state);
+        call_user_func_array(array($this, $validator), array($form, &$form_state));
       }
     }
   }
