@@ -1099,7 +1099,7 @@ function islandora_bookmark_add_form_submit(array $form, array &$form_state) {
 function islandora_bookmark_add_pid(array $form, array &$form_state) {
   $errors = form_get_errors();
 
-  if (count($errors) === 0) {
+  if (!$errors) {
     module_load_include('inc', 'islandora_bookmark', 'includes/api');
     $key = $form_state['values']['add_bookmarks'];
     $pid = $form_state['islandora_bookmark_pid'];
